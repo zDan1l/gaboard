@@ -1,0 +1,133 @@
+
+KONSEP SISTEM
+Penilaian Kinerja Karyawan
+Berbasis Fuzzy Logic — Metode Sugeno
+Studi Kasus: Mie Gacoan
+Pendekatan Objektif untuk Evaluasi SDM berbasis Data
+
+ 
+1. Latar Belakang
+Mie Gacoan sebagai jaringan restoran dengan ratusan gerai dan ribuan karyawan membutuhkan sistem penilaian kinerja yang konsisten, transparan, dan mudah dijelaskan ke seluruh level manajemen.
+Pendekatan konvensional (penilaian manual atau rata-rata sederhana) berisiko subjektif dan tidak mampu menangkap kombinasi kondisi yang kompleks. Misalnya: karyawan dengan penjualan tinggi tapi kehadiran rendah — nilainya tidak bisa sekadar dirata-rata.
+Fuzzy Logic metode Sugeno dipilih karena:
+•	Menghasilkan output numerik langsung (crisp value) tanpa defuzzifikasi rumit.
+•	Rule base IF-THEN mudah dipahami dan dikonfigurasi oleh tim HR non-teknis.
+•	Mampu merepresentasikan kondisi "abu-abu" seperti performa yang hampir baik atau cukup.
+•	Bisa diintegrasikan ke sistem HRIS atau payroll yang sudah berjalan.
+
+2. Tujuan Sistem
+Tujuan	Manfaat untuk Gacoan
+Penilaian objektif & konsisten	Menghilangkan bias personal dari atasan
+Otomasi evaluasi periodik	Hemat waktu tim HR setiap kuartal
+Rekomendasi tindakan otomatis	HR langsung tahu: PIP, pelatihan, atau promosi
+Dokumentasi terstandar	Data kinerja tersimpan rapi untuk audit internal
+Transparansi ke karyawan	Karyawan paham kriteria dan bagaimana nilai dihitung
+
+3. Variabel Input
+Tiga variabel dipilih untuk merepresentasikan dimensi kinerja yang berbeda dan tidak saling menggantikan:
+
+#	Variabel	Satuan	Rentang	Keterangan
+1	KPI Pencapaian	%	0 – 100%	Realisasi target penjualan/layanan vs target
+2	Tingkat Kehadiran	%	0 – 100%	Jumlah hari hadir dari total hari kerja
+3	Kepuasan Pelanggan	Skor	1 – 5	Rata-rata survei kepuasan dari pelanggan
+
+Ketiga variabel ini relevan untuk konteks restoran karena: KPI mengukur produktivitas, kehadiran mencerminkan kedisiplinan, dan kepuasan pelanggan membuktikan kualitas layanan nyata di lapangan.
+
+4. Fuzzifikasi
+Setiap variabel input dibagi menjadi 3 himpunan fuzzy menggunakan fungsi keanggotaan trapesium. Nilai dapat memiliki derajat keanggotaan (μ) di lebih dari satu himpunan sekaligus — inilah yang membuat fuzzy logic lebih akurat dari ambang batas kaku.
+
+4.1 KPI Pencapaian (0 – 100%)
+Himpunan	Simbol	Rentang Dominan	Keterangan
+Rendah	L	0 – 60%	Target tidak tercapai atau jauh di bawah
+Sedang	M	50 – 85%	Target tercapai sebagian
+Tinggi	H	78 – 100%	Target tercapai penuh atau melampaui
+
+4.2 Tingkat Kehadiran (0 – 100%)
+Himpunan	Simbol	Rentang Dominan	Keterangan
+Rendah	L	0 – 80%	Sering absen, izin berlebihan
+Sedang	M	75 – 95%	Kehadiran umumnya terpenuhi
+Tinggi	H	90 – 100%	Hampir selalu hadir tepat waktu
+
+4.3 Kepuasan Pelanggan (1 – 10)
+Himpunan	Simbol	Rentang Dominan	Keterangan
+Rendah	L	1 – 5.5	Banyak keluhan, pelayanan di bawah standar
+Sedang	M	4.5 – 8	Pelayanan cukup, ada ruang perbaikan
+Tinggi	H	7 – 10	Pelanggan puas, jarang ada komplain
+
+ 
+5. Rule Base (Aturan IF-THEN)
+Kombinasi 3 variabel × 3 himpunan menghasilkan 27 aturan. Setiap rule menghasilkan konstanta skor (z) antara 0 dan 1 — ciri khas Sugeno. Berikut 12 rule utama yang paling sering aktif:
+
+Rule	KPI	Kehadiran	Kepuasan	Skor z	Kategori
+R1	Tinggi	Tinggi	Tinggi	0.92	Sangat Baik
+R2	Tinggi	Tinggi	Sedang	0.83	Baik
+R3	Tinggi	Sedang	Tinggi	0.80	Baik
+R4	Sedang	Tinggi	Tinggi	0.78	Baik
+R5	Tinggi	Tinggi	Rendah	0.70	Baik
+R6	Tinggi	Sedang	Sedang	0.68	Baik
+R7	Sedang	Sedang	Sedang	0.55	Cukup
+R8	Sedang	Tinggi	Rendah	0.50	Cukup
+R9	Sedang	Sedang	Rendah	0.44	Cukup
+R10	Rendah	Tinggi	Sedang	0.38	Buruk
+R11	Rendah	Sedang	Rendah	0.20	Buruk
+R12	Rendah	Rendah	Rendah	0.08	Buruk
+
+Catatan: Nilai z setiap rule ditentukan bersama tim HR dan manajer operasional Gacoan berdasarkan pengalaman lapangan. Rule dapat diubah tanpa memodifikasi kode sistem.
+
+6. Inferensi & Defuzzifikasi
+6.1 Inferensi (Operator MIN)
+Untuk setiap rule yang aktif, derajat aktivasi dihitung dengan operator AND → MIN:
+
+μ_rule = MIN(μ_KPI, μ_Kehadiran, μ_Kepuasan)
+
+6.2 Defuzzifikasi (Weighted Average — khas Sugeno)
+z* = Σ(μᵢ × zᵢ) / Σ(μᵢ)
+Hasilnya adalah skor kinerja crisp dalam rentang 0.00 – 1.00.
+
+6.3 Contoh Perhitungan
+Data karyawan: KPI = 78%, Kehadiran = 88%, Kepuasan Pelanggan = 7.5
+
+Langkah	Proses	Hasil
+Fuzzifikasi	KPI=78% → μ-Sedang=0.47, μ-Tinggi=0.53	μ terbagi dua himpunan
+Fuzzifikasi	Hadir=88% → μ-Sedang=0.40, μ-Tinggi=0.60	μ terbagi dua himpunan
+Fuzzifikasi	Kepuasan=7.5 → μ-Sedang=0.33, μ-Tinggi=0.67	μ terbagi dua himpunan
+Inferensi R1	MIN(0.53, 0.60, 0.67) × z=0.92	μ_R1 = 0.53
+Inferensi R2	MIN(0.53, 0.60, 0.33) × z=0.83	μ_R2 = 0.33
+Inferensi R4	MIN(0.47, 0.60, 0.67) × z=0.78	μ_R4 = 0.47
+Defuzzifikasi	(0.53×0.92 + 0.33×0.83 + 0.47×0.78) / (0.53+0.33+0.47)	z* = 0.85
+Hasil Akhir	Skor = 0.85 → Kategori: Sangat Baik	✓ Rekomendasi: Apresiasi + Pertimbangkan Promosi
+
+7. Kategori Output & Rekomendasi HR
+Rentang Skor	Kategori	Rekomendasi Tindakan HR
+0.00 – 0.39	Kinerja Buruk	Laksanakan PIP (Performance Improvement Plan). Konseling wajib dengan atasan. Evaluasi ulang 30 hari.
+0.40 – 0.64	Kinerja Cukup	Daftarkan ke program pelatihan & mentoring. Tetapkan target pengembangan kuartal berikutnya.
+0.65 – 0.84	Kinerja Baik	Berikan apresiasi formal. Identifikasi peluang promosi atau penambahan tanggung jawab.
+0.85 – 1.00	Kinerja Sangat Baik	Rekomendasikan bonus kinerja dan fast-track karir. Masukkan ke talent pool unggulan Gacoan.
+
+8. Alur Sistem Secara Ringkas
+Tahap	Aktivitas	Pelaku
+1. Input data	HR/manajer mengisi KPI, kehadiran, kepuasan pelanggan per karyawan	HR / Manajer Gerai
+2. Fuzzifikasi	Sistem mengubah nilai numerik ke derajat keanggotaan (μ)	Sistem otomatis
+3. Inferensi	Sistem menjalankan 27 rule dan menghitung μ tiap rule aktif	Sistem otomatis
+4. Defuzzifikasi	Weighted average → skor crisp 0.00 – 1.00	Sistem otomatis
+5. Output	Dashboard menampilkan skor, kategori, dan rekomendasi tindakan	Sistem otomatis
+6. Tindak lanjut	HR menjalankan rekomendasi: PIP, pelatihan, apresiasi, promosi	HR / Manajemen
+
+9. Rencana Implementasi
+Sistem dirancang sebagai aplikasi web internal Gacoan yang dapat diakses oleh HR pusat dan manajer gerai:
+
+Komponen	Deskripsi	Prioritas
+Form Input	Pengisian 3 nilai per karyawan, bisa bulk import dari CSV/Excel	Tinggi
+Fuzzy Engine	Kalkulasi Sugeno di backend (Python/Node.js)	Tinggi
+Dashboard HR	Tabel karyawan, filter per gerai/divisi, export laporan	Tinggi
+Rule Editor	Antarmuka admin untuk ubah nilai z tiap rule tanpa coding	Sedang
+Riwayat Kinerja	Grafik tren skor per karyawan lintas periode	Sedang
+Integrasi HRIS	Sinkronisasi data dengan sistem payroll/absensi yang ada	Rendah
+
+Teknologi yang disarankan: React (frontend), Python Flask atau Node.js (backend engine fuzzy), PostgreSQL (penyimpanan data kinerja dan rule). Dapat berjalan di infrastruktur cloud maupun on-premise.
+
+10. Kesimpulan
+Sistem penilaian kinerja berbasis Fuzzy Logic Sugeno menawarkan pendekatan yang lebih adil dan terukur dibandingkan penilaian manual. Untuk konteks Gacoan, sistem ini memungkinkan evaluasi ribuan karyawan secara konsisten di seluruh gerai, dengan hasil yang bisa dijelaskan secara logis ke karyawan maupun manajemen.
+Tiga keunggulan utama untuk Gacoan: (1) Penilaian multi-dimensi yang tidak mereduksi kinerja menjadi satu angka mentah, (2) Rule base yang bisa dikustomisasi sesuai nilai dan prioritas perusahaan tanpa perlu developer, dan (3) Rekomendasi tindakan HR yang otomatis menghemat waktu dan memastikan konsistensi kebijakan SDM di seluruh gerai.
+
+Dokumen Konsep — Sistem Penilaian Kinerja Fuzzy Sugeno — Mie Gacoan — 2026
