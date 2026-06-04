@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class EmployeeSeeder extends Seeder
@@ -17,20 +16,21 @@ class EmployeeSeeder extends Seeder
     {
         $departments = Department::all();
 
-        // Get all users who should be employees (both HR Manager and Employee roles)
-        $users = User::whereHas('role', function($query) {
-            $query->whereIn('slug', ['employee', 'hr_manager']);
+        // Get only regular employee users (NOT HR Managers)
+        // HR Managers are managers, they should not have Employee records
+        $users = User::whereHas('role', function ($query) {
+            $query->where('slug', 'employee');
         })->get();
 
-        // Get HR Manager users who can be managers
-        $managerUsers = User::whereHas('role', function($query) {
+        // Get HR Manager users who can be assigned as managers to employees
+        $managerUsers = User::whereHas('role', function ($query) {
             $query->where('slug', 'hr_manager');
         })->get();
 
         $positions = [
             'Staff Restoran', 'Kasir', 'Waiter', 'Cook', 'Barista',
             'Supervisor', 'Asisten Manager', 'Staff Administrasi', 'Quality Control',
-            'Inventory Control', 'Marketing Staff', 'Customer Service'
+            'Inventory Control', 'Marketing Staff', 'Customer Service',
         ];
 
         $employeeCodes = [
@@ -43,28 +43,27 @@ class EmployeeSeeder extends Seeder
         ];
 
         foreach ($users as $index => $user) {
-            // Assign department and manager
-            if ($user->role->slug === 'hr_manager') {
-                // HR Managers work in departments, some don't have managers
-                $department = $departments->skip($index % $departments->count())->first();
-                $managerId = null; // HR Managers don't have managers
-            } else {
-                // Regular employees report to HR Managers
-                $department = $departments->random();
-                $manager = $managerUsers->random();
-                $managerId = Employee::where('user_id', $manager->id)->first()?->id;
-            }
+            // All users here are regular employees (not HR Managers)
+            // Assign random department and HR Manager as their manager
+            $department = $departments->random();
+
+            // Assign an HR Manager as this employee's manager
+            // Note: manager_id should be the Employee's manager, not the User's manager
+            // Since HR Managers don't have Employee records, we need to handle this differently
+            // For now, we'll assign the manager's user_id as manager_id (this is a design decision)
+            $manager = $managerUsers->random();
+            $managerId = $manager->id; // Store the User ID of the HR Manager
 
             // Check if employee already exists
             $existingEmployee = Employee::where('user_id', $user->id)->first();
-            if (!$existingEmployee) {
+            if (! $existingEmployee) {
                 Employee::create([
                     'user_id' => $user->id,
                     'department_id' => $department->id,
                     'manager_id' => $managerId,
-                    'employee_code' => $employeeCodes[$index] ?? 'MGC' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+                    'employee_code' => $employeeCodes[$index] ?? 'MGC'.str_pad($index + 1, 3, '0', STR_PAD_LEFT),
                     'position' => $positions[array_rand($positions)],
-                    'phone' => '08' . rand(11, 99) . rand(1000, 9999) . rand(1000, 9999),
+                    'phone' => '08'.rand(11, 99).rand(1000, 9999).rand(1000, 9999),
                     'join_date' => now()->subDays(rand(100, 1000))->format('Y-m-d'),
                     'status' => 'active',
                 ]);

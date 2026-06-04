@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Evaluation;
 use App\Models\Employee;
+use App\Models\Evaluation;
 use App\Services\FuzzyLogicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,9 +49,12 @@ class EvaluationController extends Controller
         $user = Auth::user();
 
         if ($user->role->slug === 'hr_manager') {
-            // HR/Manager can evaluate all active employees
+            // HR/Manager can evaluate all active regular employees (not other HR Managers)
             $employees = Employee::with('user')
                 ->where('status', 'active')
+                ->whereHas('user.role', function ($query) {
+                    $query->where('slug', 'employee');
+                })
                 ->get();
         } else {
             return redirect()->route('evaluations.index')
@@ -100,7 +103,7 @@ class EvaluationController extends Controller
         ]);
 
         return redirect()->route('evaluations.show', $evaluation)
-            ->with('success', 'Penilaian berhasil disimpan. Skor Fuzzy: ' . $result['fuzzy_score']);
+            ->with('success', 'Penilaian berhasil disimpan. Skor Fuzzy: '.$result['fuzzy_score']);
     }
 
     /**
@@ -164,7 +167,7 @@ class EvaluationController extends Controller
         ]);
 
         return redirect()->route('evaluations.show', $evaluation)
-            ->with('success', 'Penilaian berhasil diperbarui. Skor Fuzzy: ' . $result['fuzzy_score']);
+            ->with('success', 'Penilaian berhasil diperbarui. Skor Fuzzy: '.$result['fuzzy_score']);
     }
 
     /**
@@ -199,7 +202,7 @@ class EvaluationController extends Controller
         // Generate months for current year
         $months = [
             'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
         ];
 
         foreach ($months as $month) {

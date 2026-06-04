@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
-use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -43,11 +43,15 @@ class EmployeeController extends Controller
         $user = Auth::user();
 
         $departments = Department::all();
-        $managers = User::whereHas('employee', function ($query) {
-            $query->where('status', 'active');
-        })->with('employee')->get();
+        // Get HR Managers (users with hr_manager role) as potential managers
+        $managers = User::whereHas('role', function ($query) {
+            $query->where('slug', 'hr_manager');
+        })->get();
 
-        $users = User::doesntHave('employee')->get();
+        // Get users with 'employee' role who don't have Employee records yet
+        $users = User::whereHas('role', function ($query) {
+            $query->where('slug', 'employee');
+        })->doesntHave('employee')->get();
 
         return view('employees.create', compact('departments', 'managers', 'users'));
     }
@@ -96,9 +100,10 @@ class EmployeeController extends Controller
         $this->authorizeEdit($employee);
 
         $departments = Department::all();
-        $managers = User::whereHas('employee', function ($query) {
-            $query->where('status', 'active');
-        })->with('employee')->get();
+        // Get HR Managers (users with hr_manager role) as potential managers
+        $managers = User::whereHas('role', function ($query) {
+            $query->where('slug', 'hr_manager');
+        })->get();
 
         return view('employees.edit', compact('employee', 'departments', 'managers'));
     }
