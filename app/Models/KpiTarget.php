@@ -42,6 +42,11 @@ class KpiTarget extends Model
         return $this->hasMany(KpiReport::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
     public function getAchievementPercentageAttribute(): float
     {
         $latestReport = $this->reports()->latest()->first();

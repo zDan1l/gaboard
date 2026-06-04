@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Evaluation;
+use App\Services\EvaluationCalculatorService;
 use App\Services\FuzzyLogicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,9 +13,12 @@ class EvaluationController extends Controller
 {
     protected FuzzyLogicService $fuzzyService;
 
-    public function __construct(FuzzyLogicService $fuzzyService)
+    protected EvaluationCalculatorService $calculatorService;
+
+    public function __construct(FuzzyLogicService $fuzzyService, EvaluationCalculatorService $calculatorService)
     {
         $this->fuzzyService = $fuzzyService;
+        $this->calculatorService = $calculatorService;
         $this->middleware('auth');
     }
 
@@ -64,6 +68,28 @@ class EvaluationController extends Controller
         $periods = $this->generateEvaluationPeriods();
 
         return view('evaluations.create', compact('employees', 'periods'));
+    }
+
+    /**
+     * Auto-calculate evaluation scores for an employee
+     */
+    public function autoCalculate(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'period' => 'nullable|string',
+        ]);
+
+        $employee = Employee::with('user')->findOrFail($validated['employee_id']);
+
+        $scores = $this->calculatorService->calculateEmployeeScores($employee, $validated['period'] ?? null);
+
+        return response()->json([
+            'kpi_score' => $scores['kpi_score'],
+            'attendance_rate' => $scores['attendance_rate'],
+            'customer_satisfaction' => $scores['customer_satisfaction'],
+            'details' => $scores['details'],
+        ]);
     }
 
     /**

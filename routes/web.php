@@ -61,15 +61,16 @@ Route::middleware('auth')->group(function () {
     ]);
 
     // Evaluation Routes
-    Route::resource('evaluations', EvaluationController::class)->names([
-        'index' => 'evaluations.index',
-        'create' => 'evaluations.create',
-        'store' => 'evaluations.store',
-        'show' => 'evaluations.show',
-        'edit' => 'evaluations.edit',
-        'update' => 'evaluations.update',
-        'destroy' => 'evaluations.destroy',
-    ]);
+    Route::prefix('evaluations')->name('evaluations.')->group(function () {
+        Route::get('/', [EvaluationController::class, 'index'])->name('index');
+        Route::get('/create', [EvaluationController::class, 'create'])->name('create');
+        Route::post('/auto-calculate', [EvaluationController::class, 'autoCalculate'])->name('auto-calculate');
+        Route::post('/', [EvaluationController::class, 'store'])->name('store');
+        Route::get('/{evaluation}/edit', [EvaluationController::class, 'edit'])->name('edit');
+        Route::get('/{evaluation}', [EvaluationController::class, 'show'])->name('show');
+        Route::put('/{evaluation}', [EvaluationController::class, 'update'])->name('update');
+        Route::delete('/{evaluation}', [EvaluationController::class, 'destroy'])->name('destroy');
+    });
 
     // Export Routes
     Route::prefix('exports')->name('exports.')->group(function () {

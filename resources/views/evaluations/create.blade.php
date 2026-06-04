@@ -81,8 +81,15 @@
             </div>
 
             <!-- Evaluation Criteria -->
-            <div>
-                <h4 class="text-md font-semibold text-gray-900 mb-4">Kriteria Penilaian</h4>
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-md font-semibold text-gray-900">Kriteria Penilaian</h4>
+                <button type="button" onclick="autoCalculateScores()"
+                        class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Auto-Calculate (Data Real)
+                </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -225,4 +232,80 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function autoCalculateScores() {
+    const employeeId = document.getElementById('employee_id').value;
+    const period = document.getElementById('evaluation_period').value;
+
+    if (!employeeId) {
+        alert('Pilih karyawan terlebih dahulu!');
+        return;
+    }
+
+    // Show loading state
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading...';
+    btn.disabled = true;
+
+    fetch('{{ route('evaluations.auto-calculate') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            employee_id: employeeId,
+            period: period || null
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('kpi_score').value = data.kpi_score.toFixed(2);
+        document.getElementById('attendance_rate').value = data.attendance_rate.toFixed(2);
+        document.getElementById('customer_satisfaction').value = data.customer_satisfaction.toFixed(1);
+
+        // Show details
+        let details = 'Nilai berhasil dihitung dari data real:\n\n';
+        details += `KPI: ${data.kpi_score.toFixed(2)}%\n`;
+        if (data.details.kpi.has_targets) {
+            details += `  - ${data.details.kpi.target_count} target(s)\n`;
+            details += `  - ${data.details.kpi.reports_submitted} report(s) submitted\n`;
+            if (data.details.kpi.reports_submitted < data.details.kpi.target_count) {
+                details += `  - ${data.details.kpi.target_count - data.details.kpi.reports_submitted} tanpa report = 100% (default)\n`;
+            }
+        } else {
+            details += `  - Tidak ada target KPI = 100% (default)\n`;
+        }
+
+        details += `\nKehadiran: ${data.attendance_rate.toFixed(2)}%\n`;
+        if (data.details.attendance.has_data) {
+            details += `  - ${data.details.attendance.present} hadir dari ${data.details.attendance.total_working_days} hari kerja\n`;
+        } else {
+            details += `  - Tidak ada data absensi = 100% (default)\n`;
+        }
+
+        details += `\nKepuasan Pelanggan: ${data.customer_satisfaction.toFixed(1)}/10\n`;
+        if (data.details.satisfaction.has_scores) {
+            details += `  - ${data.details.satisfaction.score_count} penilaian\n`;
+            details += `  - Rata-rata: ${data.details.satisfaction.average_score.toFixed(1)}\n`;
+        } else {
+            details += `  - Tidak ada penilaian = 10/10 (default)\n`;
+        }
+
+        alert(details);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Gagal menghitung nilai otomatis. Silakan coba lagi.');
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+@endpush
 @endsection
