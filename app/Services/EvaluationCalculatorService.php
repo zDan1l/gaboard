@@ -113,7 +113,46 @@ class EvaluationCalculatorService
 
         // Filter by period if provided
         if ($period) {
-            $query->where('period', $period);
+            // Map evaluation period to satisfaction period format
+            // Q1 2026 → 2026-01, 2026-02, 2026-03
+            // Q2 2026 → 2026-04, 2026-05, 2026-06
+            // Q3 2026 → 2026-07, 2026-08, 2026-09
+            // Q4 2026 → 2026-10, 2026-11, 2026-12
+            $periods = [];
+            if (preg_match('/Q1 (\d{4})/i', $period, $matches)) {
+                $year = $matches[1];
+                $periods = ["{$year}-01", "{$year}-02", "{$year}-03"];
+            } elseif (preg_match('/Q2 (\d{4})/i', $period, $matches)) {
+                $year = $matches[1];
+                $periods = ["{$year}-04", "{$year}-05", "{$year}-06"];
+            } elseif (preg_match('/Q3 (\d{4})/i', $period, $matches)) {
+                $year = $matches[1];
+                $periods = ["{$year}-07", "{$year}-08", "{$year}-09"];
+            } elseif (preg_match('/Q4 (\d{4})/i', $period, $matches)) {
+                $year = $matches[1];
+                $periods = ["{$year}-10", "{$year}-11", "{$year}-12"];
+            } elseif (preg_match('/(Januari|Februari|Maret)/i', $period)) {
+                // Month-based periods
+                if (preg_match('/(\d{4})/', $period, $matches)) {
+                    $year = $matches[1];
+                    $monthMap = [
+                        'Januari' => '01', 'Februari' => '02', 'Maret' => '03',
+                        'April' => '04', 'Mei' => '05', 'Juni' => '06',
+                        'Juli' => '07', 'Agustus' => '08', 'September' => '09',
+                        'Oktober' => '10', 'November' => '11', 'Desember' => '12',
+                    ];
+                    foreach ($monthMap as $monthName => $monthNum) {
+                        if (stripos($period, $monthName) !== false) {
+                            $periods = ["{$year}-{$monthNum}"];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($periods)) {
+                $query->whereIn('period', $periods);
+            }
         }
 
         $scores = $query->get();

@@ -139,7 +139,7 @@ class FuzzyLogicService
      */
     protected function trapezoidalMembership(float $x, float $a, float $b, float $c, float $d): float
     {
-        if ($x <= $a || $x >= $d) {
+        if ($x < $a || $x > $d) {
             return 0.0;
         }
 
