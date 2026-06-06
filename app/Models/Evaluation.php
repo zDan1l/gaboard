@@ -11,6 +11,8 @@ class Evaluation extends Model
         'employee_id',
         'evaluator_id',
         'evaluation_period',
+        'start_date',
+        'end_date',
         'kpi_score',
         'attendance_rate',
         'customer_satisfaction',
@@ -27,6 +29,8 @@ class Evaluation extends Model
         'customer_satisfaction' => 'decimal:1',
         'fuzzy_score' => 'decimal:2',
         'fuzzification_details' => 'array',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -43,7 +47,7 @@ class Evaluation extends Model
 
     public function getCategoryLabelAttribute(): string
     {
-        return match($this->category) {
+        return match ($this->category) {
             'sangat_baik' => 'Sangat Baik',
             'baik' => 'Baik',
             'cukup' => 'Cukup',
@@ -55,7 +59,7 @@ class Evaluation extends Model
 
     public function getPerformanceClassAttribute(): string
     {
-        return match($this->category) {
+        return match ($this->category) {
             'sangat_baik' => 'success',
             'baik' => 'primary',
             'cukup' => 'warning',

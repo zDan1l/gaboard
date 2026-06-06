@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceEntry;
 use App\Models\AttendanceSchedule;
+use App\Models\Department;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,18 @@ class AttendanceEntryController extends Controller
             'status' => 'nullable|in:present,late,absent,excused',
             'notes' => 'nullable|string',
         ]);
+
+        // Check for existing attendance entry for this schedule and employee
+        $existingEntry = AttendanceEntry::where('schedule_id', $validated['schedule_id'])
+            ->where('employee_id', $validated['employee_id'])
+            ->first();
+
+        if ($existingEntry) {
+            return response()->json([
+                'message' => 'Absensi untuk jadwal dan karyawan ini sudah ada.',
+                'existing_entry' => $existingEntry->load(['schedule', 'employee']),
+            ], 422);
+        }
 
         $validated['status'] = $validated['status'] ?? 'absent';
 
@@ -239,9 +252,22 @@ class AttendanceEntryController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $query = AttendanceEntry::with(['schedule', 'employee.user']);
+        $query = AttendanceEntry::with(['schedule', 'employee.user', 'employee.department']);
 
-        // Filter by date
+        // Filter by date range
+        if ($request->has('date_from') && $request->date_from) {
+            $query->whereHas('schedule', function ($q) use ($request) {
+                $q->where('schedule_date', '>=', $request->date_from);
+            });
+        }
+
+        if ($request->has('date_to') && $request->date_to) {
+            $query->whereHas('schedule', function ($q) use ($request) {
+                $q->where('schedule_date', '<=', $request->date_to);
+            });
+        }
+
+        // Filter by single date
         if ($request->has('date') && $request->date) {
             $query->whereHas('schedule', function ($q) use ($request) {
                 $q->where('schedule_date', $request->date);
@@ -258,17 +284,51 @@ class AttendanceEntryController extends Controller
             $query->where('status', $request->status);
         }
 
-        $entries = $query->latest()->get();
+        // Filter by department
+        if ($request->has('department_id') && $request->department_id) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
+        }
+
+        $entries = $query->orderBy('created_at', 'desc')->paginate(50);
 
         // Get employees for filter dropdown (only regular employees)
-        $employees = Employee::with('user')
+        $employees = Employee::with('user', 'department')
             ->whereHas('user.role', function ($query) {
                 $query->where('slug', 'employee');
-            })->get();
+            })
+            ->where('status', 'active')
+            ->get();
+
+        // Get departments for filter
+        $departments = Department::orderBy('name')->get();
 
         // Get schedules for filter dropdown
-        $schedules = AttendanceSchedule::orderBy('schedule_date', 'desc')->limit(30)->get();
+        $schedules = AttendanceSchedule::orderBy('schedule_date', 'desc')
+            ->where('schedule_date', '>=', now()->subDays(30))
+            ->limit(30)
+            ->get();
 
-        return view('attendance-entries.manage', compact('entries', 'employees', 'schedules'));
+        // Get today's schedule for quick attendance creation
+        $todaySchedule = AttendanceSchedule::where('schedule_date', today())->first();
+
+        // Calculate statistics
+        $stats = [
+            'total' => AttendanceEntry::count(),
+            'present' => AttendanceEntry::where('status', 'present')->count(),
+            'late' => AttendanceEntry::where('status', 'late')->count(),
+            'absent' => AttendanceEntry::where('status', 'absent')->count(),
+            'excused' => AttendanceEntry::where('status', 'excused')->count(),
+        ];
+
+        return view('attendance-entries.manage', compact(
+            'entries',
+            'employees',
+            'schedules',
+            'departments',
+            'todaySchedule',
+            'stats'
+        ));
     }
 }

@@ -9,6 +9,119 @@
         <p class="text-gray-600 mt-2">Selamat datang, {{ $user->name }}!</p>
     </div>
 
+    <!-- Today's Attendance Quick Status -->
+    <div class="bg-gradient-to-r {{ $todaySchedule && $todaySchedule->is_working_day ? 'from-blue-500 to-blue-600' : 'from-gray-500 to-gray-600' }} rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h2 class="text-lg font-semibold mb-1">Status Absensi Hari Ini</h2>
+                <p class="text-blue-100">{{ now()->locale('id')->translatedFormat('l, d F Y') }}</p>
+            </div>
+            @if($todaySchedule)
+                @if($todaySchedule->is_working_day)
+                    <div class="bg-green-500 px-3 py-1 rounded-full text-sm font-semibold">
+                        HARI KERJA
+                    </div>
+                @else
+                    <div class="bg-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
+                        HARI LIBUR
+                    </div>
+                @endif
+            @else
+                <div class="bg-yellow-500 px-3 py-1 rounded-full text-sm font-semibold">
+                    TIDAK ADA JADWAL
+                </div>
+            @endif
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-white/10 rounded-lg p-3 text-center">
+                <p class="text-xs text-blue-100 mb-1">Jam Masuk</p>
+                <p class="text-xl font-bold">{{ $todayAttendance?->clock_in_time?->format('H:i') ?? '--:--' }}</p>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3 text-center">
+                <p class="text-xs text-blue-100 mb-1">Jam Keluar</p>
+                <p class="text-xl font-bold">{{ $todayAttendance?->clock_out_time?->format('H:i') ?? '--:--' }}</p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <div class="text-sm">
+                @if($todaySchedule && $todaySchedule->is_working_day)
+                    @if($todayAttendance && $todayAttendance->clock_in_time && $todayAttendance->clock_out_time)
+                        <span class="text-green-300">✓ Absensi selesai</span>
+                    @elseif($todayAttendance && $todayAttendance->clock_in_time)
+                        <span class="text-yellow-300">⏳ Belum absen keluar</span>
+                    @else
+                        <span class="text-red-300">⚠️ Belum absen masuk</span>
+                    @endif
+                @elseif($todaySchedule && !$todaySchedule->is_working_day)
+                    <span class="text-gray-300">Tidak perlu absen</span>
+                @else
+                    <span class="text-yellow-300">Hubungi HR</span>
+                @endif
+            </div>
+            <a href="{{ route('attendance-entries.my-attendance') }}" class="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">
+                Lihat Absensi →
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white shadow-sm rounded-lg p-6 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Hadir Bulan Ini</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $present }}</p>
+                </div>
+                <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white shadow-sm rounded-lg p-6 border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Terlambat</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $late }}</p>
+                </div>
+                <div class="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white shadow-sm rounded-lg p-6 border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Absen</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $absent }}</p>
+                </div>
+                <div class="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white shadow-sm rounded-lg p-6 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Penilaian</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $myEvaluations->count() }}</p>
+                </div>
+                <div class="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if($myEvaluations->count() > 0)
         @php
             $latestEvaluation = $myEvaluations->first();

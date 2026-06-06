@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('evaluations')->name('evaluations.')->group(function () {
         Route::get('/', [EvaluationController::class, 'index'])->name('index');
         Route::get('/create', [EvaluationController::class, 'create'])->name('create');
-        Route::post('/auto-calculate', [EvaluationController::class, 'autoCalculate'])->name('auto-calculate');
+        Route::post('/batch-generate', [EvaluationController::class, 'batchGenerate'])->name('batch-generate');
         Route::post('/', [EvaluationController::class, 'store'])->name('store');
         Route::get('/{evaluation}/edit', [EvaluationController::class, 'edit'])->name('edit');
         Route::get('/{evaluation}', [EvaluationController::class, 'show'])->name('show');

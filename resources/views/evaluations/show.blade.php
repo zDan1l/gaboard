@@ -55,7 +55,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Periode Penilaian</p>
-                    <p class="text-base font-medium text-gray-900">{{ $evaluation->evaluation_period }}</p>
+                    <p class="text-base font-medium text-gray-900">{{ $evaluation->start_date ? $evaluation->start_date->format('d M Y') : 'N/A' }} s/d {{ $evaluation->end_date ? $evaluation->end_date->format('d M Y') : 'N/A' }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Status</p>
@@ -135,162 +135,31 @@
         </div>
     </div>
 
-    @if($evaluation->fuzzification_details)
-    <!-- Fuzzification Process Details -->
+    <!-- Performance Summary -->
     <div class="bg-white shadow-sm rounded-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M15 7h6m0 10v-3m-3 3h.01M9 17h.01M15 7h6m0 10v-3m-3 3h.01M9 17h.01M15 7h6"/>
-                </svg>
-                Detail Perhitungan Fuzzy Logic
-            </h3>
+            <h3 class="text-lg font-semibold text-gray-900">Ringkasan Kinerja</h3>
         </div>
         <div class="p-6">
-            <!-- Fuzzification Results -->
-            <div class="mb-6">
-                <h4 class="text-md font-semibold text-gray-700 mb-4">1. Fuzzifikasi (Konversi Nilai Numerik ke Linguistik)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- KPI Fuzzification -->
-                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                        <div class="bg-blue-600 text-white px-3 py-2">
-                            <h5 class="text-sm font-semibold">KPI: {{ $evaluation->fuzzification_details['fuzzification_detail']['kpi']['input'] }}%</h5>
-                        </div>
-                        <div class="p-3 space-y-2">
-                            @foreach($evaluation->fuzzification_details['fuzzification_detail']['kpi']['membership'] as $category => $value)
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-xs text-gray-600">{{ ucfirst($category) }}</span>
-                                        <span class="text-xs font-medium">{{ number_format($value * 100, 1) }}%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: {{ $value * 100 }}%"></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                            @if($evaluation->fuzzification_details['fuzzification_detail']['kpi']['dominant']['value'] > 0)
-                                <div class="mt-2 pt-2 border-t border-gray-200">
-                                    <span class="text-xs font-medium">Dominan:</span>
-                                    <span class="text-xs text-blue-600 font-semibold"> {{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['kpi']['dominant']['category']) }}</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Attendance Fuzzification -->
-                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                        <div class="bg-green-600 text-white px-3 py-2">
-                            <h5 class="text-sm font-semibold">Kehadiran: {{ $evaluation->fuzzification_details['fuzzification_detail']['attendance']['input'] }}%</h5>
-                        </div>
-                        <div class="p-3 space-y-2">
-                            @foreach($evaluation->fuzzification_details['fuzzification_detail']['attendance']['membership'] as $category => $value)
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-xs text-gray-600">{{ ucfirst($category) }}</span>
-                                        <span class="text-xs font-medium">{{ number_format($value * 100, 1) }}%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ $value * 100 }}%"></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                            @if($evaluation->fuzzification_details['fuzzification_detail']['attendance']['dominant']['value'] > 0)
-                                <div class="mt-2 pt-2 border-t border-gray-200">
-                                    <span class="text-xs font-medium">Dominan:</span>
-                                    <span class="text-xs text-green-600 font-semibold"> {{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['attendance']['dominant']['category']) }}</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Satisfaction Fuzzification -->
-                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                        <div class="bg-yellow-600 text-white px-3 py-2">
-                            <h5 class="text-sm font-semibold">Kepuasan: {{ $evaluation->fuzzification_details['fuzzification_detail']['satisfaction']['input'] }}</h5>
-                        </div>
-                        <div class="p-3 space-y-2">
-                            @foreach($evaluation->fuzzification_details['fuzzification_detail']['satisfaction']['membership'] as $category => $value)
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-xs text-gray-600">{{ ucfirst($category) }}</span>
-                                        <span class="text-xs font-medium">{{ number_format($value * 100, 1) }}%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-yellow-500 h-2 rounded-full transition-all" style="width: {{ $value * 100 }}%"></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                            @if($evaluation->fuzzification_details['fuzzification_detail']['satisfaction']['dominant']['value'] > 0)
-                                <div class="mt-2 pt-2 border-t border-gray-200">
-                                    <span class="text-xs font-medium">Dominan:</span>
-                                    <span class="text-xs text-yellow-600 font-semibold"> {{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['satisfaction']['dominant']['category']) }}</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p class="text-sm text-blue-600 mb-1">Kategori Input KPI</p>
+                    <p class="text-lg font-bold text-blue-800">{{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['kpi']['dominant']['category'] ?? 'N/A') }}</p>
+                    <p class="text-xs text-blue-600">{{ number_format($evaluation->kpi_score, 1) }}%</p>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p class="text-sm text-green-600 mb-1">Kategori Input Kehadiran</p>
+                    <p class="text-lg font-bold text-green-800">{{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['attendance']['dominant']['category'] ?? 'N/A') }}</p>
+                    <p class="text-xs text-green-600">{{ number_format($evaluation->attendance_rate, 1) }}%</p>
+                </div>
+                <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p class="text-sm text-yellow-600 mb-1">Kategori Input Kepuasan</p>
+                    <p class="text-lg font-bold text-yellow-800">{{ ucfirst($evaluation->fuzzification_details['fuzzification_detail']['satisfaction']['dominant']['category'] ?? 'N/A') }}</p>
+                    <p class="text-xs text-yellow-600">{{ number_format($evaluation->customer_satisfaction, 1) }}/10</p>
                 </div>
             </div>
-
-            <!-- Active Rules -->
-            @if(isset($evaluation->fuzzification_details['active_rules']) && count($evaluation->fuzzification_details['active_rules']) > 0)
-                <div class="mb-6">
-                    <h4 class="text-md font-semibold text-gray-700 mb-4">2. Aturan Aktif (Rules yang digunakan)</h4>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Strength</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Output (z)</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kontribusi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($evaluation->fuzzification_details['active_rules'] as $index => $rule)
-                                    <tr>
-                                        <td class="px-4 py-2 text-sm">{{ $index + 1 }}</td>
-                                        <td class="px-4 py-2 text-sm">
-                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                {{ number_format($rule['strength'] * 100, 1) }}%
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">{{ $rule['z'] }}</td>
-                                        <td class="px-4 py-2 text-sm">{{ number_format($rule['strength'] * $rule['z'], 3) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Defuzzification Process -->
-            @if(isset($evaluation->fuzzification_details['defuzzification_process']))
-                <div>
-                    <h4 class="text-md font-semibold text-gray-700 mb-4">3. Defuzzifikasi (Perhitungan Skor Akhir)</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">Numerator (Σμ × z)</p>
-                            <p class="text-lg font-semibold text-blue-600">{{ number_format($evaluation->fuzzification_details['defuzzification_process']['numerator'], 3) }}</p>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">Denominator (Σμ)</p>
-                            <p class="text-lg font-semibold text-green-600">{{ number_format($evaluation->fuzzification_details['defuzzification_process']['denominator'], 3) }}</p>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">Rules Used</p>
-                            <p class="text-lg font-semibold text-purple-600">{{ $evaluation->fuzzification_details['defuzzification_process']['rules_used'] }}</p>
-                        </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">Hasil Akhir</p>
-                            <p class="text-lg font-bold text-gray-900">{{ number_format($evaluation->fuzzification_details['defuzzification_process']['numerator'] / $evaluation->fuzzification_details['defuzzification_process']['denominator'], 2) }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
-    @endif
 
     <!-- Additional Information -->
     <div class="bg-white shadow-sm rounded-lg overflow-hidden">

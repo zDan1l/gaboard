@@ -11,7 +11,8 @@
       "Bash(composer dump-autoload *)",
       "mcp__laravel-boost__database-query",
       "mcp__laravel-boost__last-error",
-      "Bash(timeout 3 bash -c \"while ! curl -s http://localhost:8001 > /dev/null; do sleep 0.5; done\")"
+      "Bash(timeout 3 bash -c \"while ! curl -s http://localhost:8001 > /dev/null; do sleep 0.5; done\")",
+      "mcp__laravel-boost__browser-logs"
     ]
   },
   "disabledMcpjsonServers": [

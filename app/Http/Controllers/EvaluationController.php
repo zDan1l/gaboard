@@ -65,30 +65,8 @@ class EvaluationController extends Controller
                 ->with('error', 'Anda tidak memiliki akses untuk melakukan penilaian.');
         }
 
-        $periods = $this->generateEvaluationPeriods();
-
-        return view('evaluations.create', compact('employees', 'periods'));
-    }
-
-    /**
-     * Auto-calculate evaluation scores for an employee
-     */
-    public function autoCalculate(Request $request)
-    {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'period' => 'nullable|string',
-        ]);
-
-        $employee = Employee::with('user')->findOrFail($validated['employee_id']);
-
-        $scores = $this->calculatorService->calculateEmployeeScores($employee, $validated['period'] ?? null);
-
-        return response()->json([
-            'kpi_score' => $scores['kpi_score'],
-            'attendance_rate' => $scores['attendance_rate'],
-            'customer_satisfaction' => $scores['customer_satisfaction'],
-            'details' => $scores['details'],
+        return view('evaluations.create', [
+            'employees' => $employees,
         ]);
     }
 
@@ -99,37 +77,101 @@ class EvaluationController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'evaluation_period' => 'required|string|max:50',
-            'kpi_score' => 'required|numeric|min:0|max:100',
-            'attendance_rate' => 'required|numeric|min:0|max:100',
-            'customer_satisfaction' => 'required|numeric|min:1|max:10',
+            'start_date' => 'required|date|before_or_equal:end_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        // Calculate fuzzy score
-        $result = $this->fuzzyService->calculatePerformance(
-            $validated['kpi_score'],
-            $validated['attendance_rate'],
-            $validated['customer_satisfaction']
-        );
+        try {
+            $employee = Employee::with('user')->findOrFail($validated['employee_id']);
 
-        // Create evaluation
-        $evaluation = Evaluation::create([
-            'employee_id' => $validated['employee_id'],
-            'evaluator_id' => Auth::id(),
-            'evaluation_period' => $validated['evaluation_period'],
-            'kpi_score' => $validated['kpi_score'],
-            'attendance_rate' => $validated['attendance_rate'],
-            'customer_satisfaction' => $validated['customer_satisfaction'],
-            'fuzzy_score' => $result['fuzzy_score'],
-            'category' => $result['category'],
-            'hr_recommendation' => $result['hr_recommendation'],
-            'fuzzification_details' => $result,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+            // Validate date range
+            $startDate = \DateTime::createFromFormat('Y-m-d', $validated['start_date']);
+            $endDate = \DateTime::createFromFormat('Y-m-d', $validated['end_date']);
 
-        return redirect()->route('evaluations.show', $evaluation)
-            ->with('success', 'Penilaian berhasil disimpan. Skor Fuzzy: '.$result['fuzzy_score']);
+            if (! $startDate || ! $endDate) {
+                throw new \Exception('Format tanggal tidak valid. Gunakan format YYYY-MM-DD');
+            }
+
+            if ($startDate > $endDate) {
+                throw new \Exception('Tanggal start tidak boleh lebih besar dari tanggal end');
+            }
+
+            $interval = $startDate->diff($endDate);
+            if ($interval->days > 365) {
+                throw new \Exception('Periode penilaian maksimal 1 tahun. Silakan pilih periode yang lebih pendek');
+            }
+
+            // Auto-calculate scores from real data
+            $scores = $this->calculatorService->calculateEmployeeScores(
+                $employee,
+                null, // period is deprecated
+                $validated['start_date'],
+                $validated['end_date']
+            );
+
+            // Calculate fuzzy score
+            $result = $this->fuzzyService->calculatePerformance(
+                $scores['kpi_score'],
+                $scores['attendance_rate'],
+                $scores['customer_satisfaction']
+            );
+
+            // Check for existing evaluation for this employee and date range
+            $existingEvaluation = Evaluation::where('employee_id', $validated['employee_id'])
+                ->where('start_date', $validated['start_date'])
+                ->where('end_date', $validated['end_date'])
+                ->first();
+
+            if ($existingEvaluation) {
+                return redirect()->route('evaluations.index')
+                    ->with('error', 'Penilaian untuk karyawan ini pada periode '.$validated['start_date'].' s/d '.$validated['end_date'].' sudah ada. Silakan edit penilaian yang sudah ada atau gunakan periode yang berbeda.');
+            }
+
+            // Check for overlapping evaluation periods
+            $overlapPeriod = Evaluation::where('employee_id', $validated['employee_id'])
+                ->where(function ($query) use ($validated) {
+                    $query->where(function ($q) use ($validated) {
+                        // Existing period overlaps with new period
+                        $q->where('start_date', '<=', $validated['end_date'])
+                            ->where('end_date', '>=', $validated['start_date']);
+                    });
+                })
+                ->first();
+
+            if ($overlapPeriod) {
+                $overlapStart = $overlapPeriod->start_date->format('d M Y');
+                $overlapEnd = $overlapPeriod->end_date->format('d M Y');
+
+                return redirect()->route('evaluations.index')
+                    ->with('error', "Periode penilaian bertumpang tindih (overlap) dengan penilaian yang sudah ada: {$overlapStart} s/d {$overlapEnd}. Silakan pilih periode yang tidak overlap.");
+            }
+
+            // Create evaluation
+            $evaluation = Evaluation::create([
+                'employee_id' => $validated['employee_id'],
+                'evaluator_id' => Auth::id(),
+                'evaluation_period' => $validated['start_date'].' s/d '.$validated['end_date'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'kpi_score' => $scores['kpi_score'],
+                'attendance_rate' => $scores['attendance_rate'],
+                'customer_satisfaction' => $scores['customer_satisfaction'],
+                'fuzzy_score' => $result['fuzzy_score'],
+                'category' => $result['category'],
+                'hr_recommendation' => $result['hr_recommendation'],
+                'fuzzification_details' => $result,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+
+            return redirect()->route('evaluations.show', $evaluation)
+                ->with('success', 'Penilaian berhasil disimpan. Skor Fuzzy: '.$result['fuzzy_score'].' ('.$result['category'].')');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal membuat penilaian: '.$e->getMessage());
+        }
     }
 
     /**
@@ -236,6 +278,166 @@ class EvaluationController extends Controller
         }
 
         return $periods;
+    }
+
+    /**
+     * Batch generate evaluations for all employees
+     */
+    public function batchGenerate(Request $request)
+    {
+        if (Auth::user()->role->slug !== 'hr_manager') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'start_date' => 'required|date|before_or_equal:end_date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $validated['start_date'];
+        $endDate = $validated['end_date'];
+
+        // Validate date range
+        $start = \DateTime::createFromFormat('Y-m-d', $startDate);
+        $end = \DateTime::createFromFormat('Y-m-d', $endDate);
+
+        if (! $start || ! $end) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Format tanggal tidak valid. Gunakan format YYYY-MM-DD',
+            ], 422);
+        }
+
+        if ($start > $end) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal start tidak boleh lebih besar dari tanggal end',
+            ], 422);
+        }
+
+        $interval = $start->diff($end);
+        if ($interval->days > 365) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Periode penilaian maksimal 1 tahun. Silakan pilih periode yang lebih pendek',
+            ], 422);
+        }
+
+        // Get all active employees (not HR managers)
+        $employees = Employee::with('user')
+            ->where('status', 'active')
+            ->whereHas('user.role', function ($query) {
+                $query->where('slug', 'employee');
+            })
+            ->get();
+
+        $created = 0;
+        $skippedExists = 0;
+        $skippedNoData = [];
+        $errors = [];
+
+        foreach ($employees as $employee) {
+            try {
+                // Check if evaluation already exists for this employee and date range
+                $existing = Evaluation::where('employee_id', $employee->id)
+                    ->where('start_date', $startDate)
+                    ->where('end_date', $endDate)
+                    ->first();
+
+                if ($existing) {
+                    $skippedExists++;
+
+                    continue;
+                }
+
+                // Check for overlapping evaluation periods
+                $overlapPeriod = Evaluation::where('employee_id', $employee->id)
+                    ->where(function ($query) use ($startDate, $endDate) {
+                        $query->where(function ($q) use ($startDate, $endDate) {
+                            // Existing period overlaps with new period
+                            $q->where('start_date', '<=', $endDate)
+                              ->where('end_date', '>=', $startDate);
+                        });
+                    })
+                    ->first();
+
+                if ($overlapPeriod) {
+                    $overlapStart = $overlapPeriod->start_date->format('d M Y');
+                    $overlapEnd = $overlapPeriod->end_date->format('d M Y');
+
+                    $skippedNoData[] = [
+                        'name' => $employee->user->name,
+                        'reason' => "Overlap dengan penilaian: {$overlapStart} s/d {$overlapEnd}",
+                    ];
+                    continue;
+                }
+
+                // Calculate scores automatically (will throw exception if no data)
+                $scores = $this->calculatorService->calculateEmployeeScores(
+                    $employee,
+                    null, // period is deprecated
+                    $startDate,
+                    $endDate
+                );
+
+                // Calculate fuzzy score
+                $result = $this->fuzzyService->calculatePerformance(
+                    $scores['kpi_score'],
+                    $scores['attendance_rate'],
+                    $scores['customer_satisfaction']
+                );
+
+                // Create evaluation
+                Evaluation::create([
+                    'employee_id' => $employee->id,
+                    'evaluator_id' => Auth::id(),
+                    'evaluation_period' => $startDate.' s/d '.$endDate,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'kpi_score' => $scores['kpi_score'],
+                    'attendance_rate' => $scores['attendance_rate'],
+                    'customer_satisfaction' => $scores['customer_satisfaction'],
+                    'fuzzy_score' => $result['fuzzy_score'],
+                    'category' => $result['category'],
+                    'hr_recommendation' => $result['hr_recommendation'],
+                    'fuzzification_details' => $result,
+                ]);
+
+                $created++;
+            } catch (\Exception $e) {
+                // Check if this is a "no data" exception
+                if (strpos($e->getMessage(), 'Data tidak lengkap') === 0) {
+                    $skippedNoData[] = [
+                        'name' => $employee->user->name,
+                        'reason' => $e->getMessage(),
+                    ];
+                } else {
+                    $errors[] = "Employee {$employee->user->name}: ".$e->getMessage();
+                }
+            }
+        }
+
+        $message = "✅ Berhasil membuat {$created} penilaian.";
+
+        if ($skippedExists > 0) {
+            $message .= " ⏭️ {$skippedExists} dilewati (sudah ada).";
+        }
+
+        if (count($skippedNoData) > 0) {
+            $message .= ' ⚠️ '.count($skippedNoData).' dilewati (data tidak lengkap):';
+            foreach ($skippedNoData as $skipped) {
+                $message .= "\n  • {$skipped['name']}: {$skipped['reason']}";
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'created' => $created,
+            'skipped_exists' => $skippedExists,
+            'skipped_no_data' => $skippedNoData,
+            'errors' => $errors,
+            'message' => $message,
+        ]);
     }
 
     /**

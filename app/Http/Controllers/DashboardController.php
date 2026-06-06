@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AttendanceEntry;
+use App\Models\AttendanceSchedule;
 use App\Models\Employee;
 use App\Models\Evaluation;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -52,6 +53,24 @@ class DashboardController extends Controller
         $employeeId = auth()->user()->employee->id;
         $analytics = $this->getEmployeeAnalytics($employeeId);
 
+        // Get today's attendance info
+        $todaySchedule = AttendanceSchedule::where('schedule_date', today())->first();
+        $todayAttendance = null;
+        if ($todaySchedule) {
+            $todayAttendance = AttendanceEntry::where('schedule_id', $todaySchedule->id)
+                ->where('employee_id', $employeeId)
+                ->first();
+        }
+
+        // Get attendance statistics
+        $attendances = AttendanceEntry::whereHas('schedule', function ($q) {
+            $q->whereMonth('schedule_date', now()->month);
+        })->where('employee_id', $employeeId)->get();
+
+        $present = $attendances->where('status', 'present')->count();
+        $late = $attendances->where('status', 'late')->count();
+        $absent = $attendances->where('status', 'absent')->count();
+
         return view('dashboard.employee', [
             'title' => 'Dashboard Karyawan',
             'user' => auth()->user(),
@@ -60,6 +79,11 @@ class DashboardController extends Controller
             'performanceTrend' => $analytics['performanceTrend'],
             'averageScore' => $analytics['averageScore'],
             'recommendations' => $analytics['recommendations'],
+            'todaySchedule' => $todaySchedule,
+            'todayAttendance' => $todayAttendance,
+            'present' => $present,
+            'late' => $late,
+            'absent' => $absent,
         ]);
     }
 

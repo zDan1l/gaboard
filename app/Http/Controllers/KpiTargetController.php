@@ -98,6 +98,34 @@ class KpiTargetController extends Controller
             'status' => 'nullable|in:active,inactive',
         ]);
 
+        // Check for overlapping KPI targets for the same employee
+        $employeeId = $validated['employee_id'];
+        $startDate = $validated['start_date'];
+        $endDate = $validated['end_date'] ?? null;
+
+        $overlapQuery = KpiTarget::where('employee_id', $employeeId)
+            ->where('status', 'active')
+            ->where(function ($query) use ($startDate, $endDate) {
+                if ($endDate) {
+                    // Check if new target overlaps with existing targets
+                    $query->where(function ($q) use ($startDate, $endDate) {
+                        $q->where('start_date', '<=', $endDate)
+                            ->whereRaw('COALESCE(end_date, "9999-12-31") >= ?', [$startDate]);
+                    });
+                } else {
+                    // New target has no end date, so check if any existing target overlaps
+                    $query->where('start_date', '<=', $startDate)
+                        ->whereRaw('COALESCE(end_date, "9999-12-31") >= ?', [$startDate]);
+                }
+            });
+
+        if ($overlapQuery->exists()) {
+            $overlappingTarget = $overlapQuery->first();
+
+            return redirect()->route('kpi-targets.index')
+                ->with('error', 'Target KPI untuk karyawan ini bertabrakan dengan target yang sudah ada: "'.$overlappingTarget->title.'" ('.$overlappingTarget->start_date.' s/d '.($overlappingTarget->end_date ?? 'tak terbatas').').');
+        }
+
         $validated['created_by'] = Auth::id();
         $validated['status'] = $validated['status'] ?? 'active';
 
@@ -126,6 +154,38 @@ class KpiTargetController extends Controller
             'end_date' => 'nullable|date|after:start_date',
             'status' => 'sometimes|in:active,inactive',
         ]);
+
+        // Check for overlapping KPI targets if employee, dates, or status is being updated
+        if (isset($validated['employee_id']) || isset($validated['start_date']) || isset($validated['end_date']) || isset($validated['status'])) {
+            $employeeId = $validated['employee_id'] ?? $kpiTarget->employee_id;
+            $startDate = $validated['start_date'] ?? $kpiTarget->start_date;
+            $endDate = $validated['end_date'] ?? $kpiTarget->end_date;
+            $status = $validated['status'] ?? $kpiTarget->status;
+
+            if ($status === 'active') {
+                $overlapQuery = KpiTarget::where('employee_id', $employeeId)
+                    ->where('status', 'active')
+                    ->where('id', '!=', $kpiTarget->id)
+                    ->where(function ($query) use ($startDate, $endDate) {
+                        if ($endDate) {
+                            $query->where(function ($q) use ($startDate, $endDate) {
+                                $q->where('start_date', '<=', $endDate)
+                                    ->whereRaw('COALESCE(end_date, "9999-12-31") >= ?', [$startDate]);
+                            });
+                        } else {
+                            $query->where('start_date', '<=', $startDate)
+                                ->whereRaw('COALESCE(end_date, "9999-12-31") >= ?', [$startDate]);
+                        }
+                    });
+
+                if ($overlapQuery->exists()) {
+                    $overlappingTarget = $overlapQuery->first();
+
+                    return redirect()->route('kpi-targets.index')
+                        ->with('error', 'Perubahan target KPI akan bertabrakan dengan target yang sudah ada: "'.$overlappingTarget->title.'" ('.$overlappingTarget->start_date.' s/d '.($overlappingTarget->end_date ?? 'tak terbatas').').');
+                }
+            }
+        }
 
         $kpiTarget->update($validated);
 

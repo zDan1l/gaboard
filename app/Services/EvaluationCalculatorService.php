@@ -12,38 +12,133 @@ class EvaluationCalculatorService
 {
     /**
      * Calculate all evaluation scores for an employee based on actual data.
-     * Uses "No Data = Perfect Score" logic - employee shouldn't be penalized for lack of data.
+     * Throws exception if employee doesn't have minimum data for evaluation.
      *
-     * @param  string|null  $period  Filter by period (e.g., "2026-06", "Q1 2026")
+     * @param  string|null  $period  Filter by period (e.g., "2026-06", "Q1 2026") - DEPRECATED, use date range instead
+     * @param  string|null  $startDate  Filter from start date (Y-m-d format)
+     * @param  string|null  $endDate  Filter to end date (Y-m-d format)
+     *
+     * @throws \Exception If employee doesn't have minimum data required
      */
-    public function calculateEmployeeScores(Employee $employee, ?string $period = null): array
+    public function calculateEmployeeScores(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): array
     {
+        // Validate date range if provided
+        if ($startDate && $endDate) {
+            $start = \DateTime::createFromFormat('Y-m-d', $startDate);
+            $end = \DateTime::createFromFormat('Y-m-d', $endDate);
+
+            if (! $start || ! $end) {
+                throw new \Exception('Format tanggal tidak valid. Gunakan format YYYY-MM-DD (contoh: 2026-06-01)');
+            }
+
+            if ($start > $end) {
+                throw new \Exception('Tanggal start tidak boleh lebih besar dari tanggal end');
+            }
+
+            $interval = $start->diff($end);
+            if ($interval->days > 365) {
+                throw new \Exception('Periode penilaian maksimal 1 tahun. Silakan pilih periode yang lebih pendek');
+            }
+        }
+
+        // Check if employee has minimum data for evaluation
+        $dataStatus = $this->checkEmployeeDataStatus($employee, $period, $startDate, $endDate);
+
+        if (! $dataStatus['has_minimal_data']) {
+            $missingReasons = [];
+            if (! $dataStatus['has_kpi_data']) {
+                $missingReasons[] = 'Tidak ada data KPI (target/report)';
+            }
+            if (! $dataStatus['has_attendance_data']) {
+                $missingReasons[] = 'Tidak ada data kehadiran';
+            }
+            if (! $dataStatus['has_satisfaction_data']) {
+                $missingReasons[] = 'Tidak ada data kepuasan pelanggan';
+            }
+
+            throw new \Exception('Data tidak lengkap: '.implode(', ', $missingReasons));
+        }
+
         return [
-            'kpi_score' => $this->calculateKpiScore($employee, $period),
-            'attendance_rate' => $this->calculateAttendanceRate($employee, $period),
-            'customer_satisfaction' => $this->calculateCustomerSatisfaction($employee, $period),
+            'kpi_score' => $this->calculateKpiScore($employee, $period, $startDate, $endDate),
+            'attendance_rate' => $this->calculateAttendanceRate($employee, $period, $startDate, $endDate),
+            'customer_satisfaction' => $this->calculateCustomerSatisfaction($employee, $period, $startDate, $endDate),
             'details' => [
-                'kpi' => $this->getKpiDetails($employee, $period),
-                'attendance' => $this->getAttendanceDetails($employee, $period),
-                'satisfaction' => $this->getSatisfactionDetails($employee, $period),
+                'kpi' => $this->getKpiDetails($employee, $period, $startDate, $endDate),
+                'attendance' => $this->getAttendanceDetails($employee, $period, $startDate, $endDate),
+                'satisfaction' => $this->getSatisfactionDetails($employee, $period, $startDate, $endDate),
             ],
         ];
     }
 
     /**
+     * Check if employee has minimal data for evaluation.
+     * Employee needs at least some data in all three categories.
+     */
+    public function checkEmployeeDataStatus(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): array
+    {
+        // Check KPI data
+        $kpiTargets = $this->getKpiTargets($employee, $period, $startDate, $endDate);
+        $hasKpiData = $kpiTargets->isNotEmpty();
+
+        // Check attendance data
+        $attendanceQuery = AttendanceEntry::with('schedule')
+            ->where('employee_id', $employee->id)
+            ->whereHas('schedule', function ($q) {
+                $q->where('is_working_day', true);
+            });
+
+        if ($startDate && $endDate) {
+            $attendanceQuery->whereHas('schedule', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('schedule_date', [$startDate, $endDate]);
+            });
+        } elseif ($period) {
+            $attendanceQuery->whereHas('schedule', function ($q) use ($period) {
+                if (preg_match('/^\d{4}-\d{2}$/', $period)) {
+                    $q->whereYear('schedule_date', substr($period, 0, 4))
+                        ->whereMonth('schedule_date', substr($period, 5, 2));
+                }
+            });
+        }
+
+        $hasAttendanceData = $attendanceQuery->count() > 0;
+
+        // Check satisfaction data
+        $satisfactionQuery = CustomerSatisfactionScore::where('employee_id', $employee->id);
+
+        if ($startDate && $endDate) {
+            $satisfactionQuery->whereBetween('created_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+        } elseif ($period) {
+            $periods = $this->mapPeriodToSatisfactionPeriods($period);
+            if (! empty($periods)) {
+                $satisfactionQuery->whereIn('period', $periods);
+            }
+        }
+
+        $hasSatisfactionData = $satisfactionQuery->count() > 0;
+
+        return [
+            'has_minimal_data' => $hasKpiData && $hasAttendanceData && $hasSatisfactionData,
+            'has_kpi_data' => $hasKpiData,
+            'has_attendance_data' => $hasAttendanceData,
+            'has_satisfaction_data' => $hasSatisfactionData,
+        ];
+    }
+
+    /**
      * Calculate KPI Score (0-100)
-     * If no targets/reports exist, returns 100 (perfect score - not employee's fault)
+     * Only counts targets that have reports. 5 of 10 targets with reports = calculate based on those 5.
      */
     public function calculateKpiScore(Employee $employee, ?string $period = null): float
     {
         $targets = $this->getKpiTargets($employee, $period);
 
         if ($targets->isEmpty()) {
-            return 100.0; // No targets = perfect score
+            return 0.0; // No targets = no score
         }
 
         $totalScore = 0;
-        $targetCount = 0;
+        $targetsWithReports = 0;
 
         foreach ($targets as $target) {
             // Get report for this KPI target
@@ -56,23 +151,19 @@ class EvaluationCalculatorService
                     $achievement = ($report->actual_value / $target->target_value) * 100;
                 }
                 $totalScore += min(100, $achievement); // Cap at 100%
-                $targetCount++;
-            } else {
-                // Has target but no report - assume 100% achievement
-                // (Not employee's fault if HR hasn't created report yet)
-                $totalScore += 100.0;
-                $targetCount++;
+                $targetsWithReports++;
             }
+            // If no report, skip this target entirely (don't assume perfect score)
         }
 
-        return $targetCount > 0 ? $totalScore / $targetCount : 100.0;
+        return $targetsWithReports > 0 ? $totalScore / $targetsWithReports : 0.0;
     }
 
     /**
      * Calculate Attendance Rate (0-100)
-     * Based on actual attendance entries
+     * Based on actual attendance entries. No data = 0%.
      */
-    public function calculateAttendanceRate(Employee $employee, ?string $period = null): float
+    public function calculateAttendanceRate(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): float
     {
         $query = AttendanceEntry::with('schedule')
             ->where('employee_id', $employee->id)
@@ -80,8 +171,12 @@ class EvaluationCalculatorService
                 $q->where('is_working_day', true);
             });
 
-        // Filter by period if provided
-        if ($period) {
+        // Filter by date range if provided
+        if ($startDate && $endDate) {
+            $query->whereHas('schedule', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('schedule_date', [$startDate, $endDate]);
+            });
+        } elseif ($period) {
             $query->whereHas('schedule', function ($q) use ($period) {
                 if (preg_match('/^\d{4}-\d{2}$/', $period)) {
                     // Format: 2026-06
@@ -94,63 +189,29 @@ class EvaluationCalculatorService
         $entries = $query->get();
 
         if ($entries->isEmpty()) {
-            return 100.0; // No attendance data = perfect score
+            return 0.0; // No attendance data = 0% (not perfect score)
         }
 
         $present = $entries->whereIn('status', ['present', 'late'])->count();
         $total = $entries->count();
 
-        return $total > 0 ? ($present / $total) * 100 : 100.0;
+        return $total > 0 ? ($present / $total) * 100 : 0.0;
     }
 
     /**
      * Calculate Customer Satisfaction Score (1-10)
-     * If no scores exist, returns 10 (perfect score - not employee's fault)
+     * Only counts available survey responses. No data = minimum score (1.0).
      */
-    public function calculateCustomerSatisfaction(Employee $employee, ?string $period = null): float
+    public function calculateCustomerSatisfaction(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): float
     {
         $query = CustomerSatisfactionScore::where('employee_id', $employee->id);
 
-        // Filter by period if provided
-        if ($period) {
-            // Map evaluation period to satisfaction period format
-            // Q1 2026 → 2026-01, 2026-02, 2026-03
-            // Q2 2026 → 2026-04, 2026-05, 2026-06
-            // Q3 2026 → 2026-07, 2026-08, 2026-09
-            // Q4 2026 → 2026-10, 2026-11, 2026-12
-            $periods = [];
-            if (preg_match('/Q1 (\d{4})/i', $period, $matches)) {
-                $year = $matches[1];
-                $periods = ["{$year}-01", "{$year}-02", "{$year}-03"];
-            } elseif (preg_match('/Q2 (\d{4})/i', $period, $matches)) {
-                $year = $matches[1];
-                $periods = ["{$year}-04", "{$year}-05", "{$year}-06"];
-            } elseif (preg_match('/Q3 (\d{4})/i', $period, $matches)) {
-                $year = $matches[1];
-                $periods = ["{$year}-07", "{$year}-08", "{$year}-09"];
-            } elseif (preg_match('/Q4 (\d{4})/i', $period, $matches)) {
-                $year = $matches[1];
-                $periods = ["{$year}-10", "{$year}-11", "{$year}-12"];
-            } elseif (preg_match('/(Januari|Februari|Maret)/i', $period)) {
-                // Month-based periods
-                if (preg_match('/(\d{4})/', $period, $matches)) {
-                    $year = $matches[1];
-                    $monthMap = [
-                        'Januari' => '01', 'Februari' => '02', 'Maret' => '03',
-                        'April' => '04', 'Mei' => '05', 'Juni' => '06',
-                        'Juli' => '07', 'Agustus' => '08', 'September' => '09',
-                        'Oktober' => '10', 'November' => '11', 'Desember' => '12',
-                    ];
-                    foreach ($monthMap as $monthName => $monthNum) {
-                        if (stripos($period, $monthName) !== false) {
-                            $periods = ["{$year}-{$monthNum}"];
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (!empty($periods)) {
+        // Filter by date range if provided
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+        } elseif ($period) {
+            $periods = $this->mapPeriodToSatisfactionPeriods($period);
+            if (! empty($periods)) {
                 $query->whereIn('period', $periods);
             }
         }
@@ -158,47 +219,78 @@ class EvaluationCalculatorService
         $scores = $query->get();
 
         if ($scores->isEmpty()) {
-            return 10.0; // No scores = perfect score (max on 1-10 scale)
+            return 1.0; // No scores = minimum score (not perfect 10.0)
         }
 
         $total = $scores->sum('score');
         $count = $scores->count();
 
-        $average = $count > 0 ? $total / $count : 10.0;
+        $average = $count > 0 ? $total / $count : 1.0;
 
         // Ensure within 1-10 range
         return max(1.0, min(10.0, $average));
     }
 
     /**
+     * Map evaluation period to satisfaction score periods
+     */
+    protected function mapPeriodToSatisfactionPeriods(string $period): array
+    {
+        $periods = [];
+
+        // Quarterly periods
+        if (preg_match('/Q1 (\d{4})/i', $period, $matches)) {
+            $year = $matches[1];
+            $periods = ["{$year}-01", "{$year}-02", "{$year}-03"];
+        } elseif (preg_match('/Q2 (\d{4})/i', $period, $matches)) {
+            $year = $matches[1];
+            $periods = ["{$year}-04", "{$year}-05", "{$year}-06"];
+        } elseif (preg_match('/Q3 (\d{4})/i', $period, $matches)) {
+            $year = $matches[1];
+            $periods = ["{$year}-07", "{$year}-08", "{$year}-09"];
+        } elseif (preg_match('/Q4 (\d{4})/i', $period, $matches)) {
+            $year = $matches[1];
+            $periods = ["{$year}-10", "{$year}-11", "{$year}-12"];
+        } elseif (preg_match('/(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)/i', $period)) {
+            // Month-based periods
+            if (preg_match('/(\d{4})/', $period, $matches)) {
+                $year = $matches[1];
+                $monthMap = [
+                    'Januari' => '01', 'Februari' => '02', 'Maret' => '03',
+                    'April' => '04', 'Mei' => '05', 'Juni' => '06',
+                    'Juli' => '07', 'Agustus' => '08', 'September' => '09',
+                    'Oktober' => '10', 'November' => '11', 'Desember' => '12',
+                ];
+                foreach ($monthMap as $monthName => $monthNum) {
+                    if (stripos($period, $monthName) !== false) {
+                        $periods = ["{$year}-{$monthNum}"];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $periods;
+    }
+
+    /**
      * Get KPI details for display
      */
-    protected function getKpiDetails(Employee $employee, ?string $period = null): array
+    protected function getKpiDetails(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): array
     {
-        $targets = $this->getKpiTargets($employee, $period);
+        $targets = $this->getKpiTargets($employee, $period, $startDate, $endDate);
 
         $details = [
             'has_targets' => $targets->isNotEmpty(),
             'target_count' => $targets->count(),
             'reports_submitted' => 0,
+            'targets_with_reports' => 0,
             'targets' => [],
         ];
 
         foreach ($targets as $target) {
-            // Get report for this KPI target (any user who reported it)
+            // Get report for this KPI target
             $report = KpiReport::where('kpi_target_id', $target->id)->first();
-
-            // Calculate achievement percentage
-            $achievement = 100.0; // Default if no report
-            $actualValue = 'N/A';
-
-            if ($report) {
-                if ($target->target_value > 0) {
-                    $achievement = ($report->actual_value / $target->target_value) * 100;
-                    $achievement = min(100, $achievement); // Cap at 100%
-                }
-                $actualValue = $report->actual_value;
-            }
 
             $targetDetails = [
                 'title' => $target->title,
@@ -206,12 +298,20 @@ class EvaluationCalculatorService
                 'target_value' => $target->target_value,
                 'unit' => $target->unit,
                 'has_report' => $report !== null,
-                'achievement' => $achievement,
-                'actual_value' => $actualValue,
+                'achievement' => null,
+                'actual_value' => 'No report',
             ];
 
             if ($report) {
+                $achievement = 0;
+                if ($target->target_value > 0) {
+                    $achievement = ($report->actual_value / $target->target_value) * 100;
+                    $achievement = min(100, $achievement); // Cap at 100%
+                }
+                $targetDetails['achievement'] = $achievement;
+                $targetDetails['actual_value'] = $report->actual_value;
                 $details['reports_submitted']++;
+                $details['targets_with_reports']++;
             }
 
             $details['targets'][] = $targetDetails;
@@ -223,7 +323,7 @@ class EvaluationCalculatorService
     /**
      * Get Attendance details for display
      */
-    protected function getAttendanceDetails(Employee $employee, ?string $period = null): array
+    protected function getAttendanceDetails(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): array
     {
         $query = AttendanceEntry::with('schedule')
             ->where('employee_id', $employee->id)
@@ -231,7 +331,11 @@ class EvaluationCalculatorService
                 $q->where('is_working_day', true);
             });
 
-        if ($period) {
+        if ($startDate && $endDate) {
+            $query->whereHas('schedule', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('schedule_date', [$startDate, $endDate]);
+            });
+        } elseif ($period) {
             $query->whereHas('schedule', function ($q) use ($period) {
                 if (preg_match('/^\d{4}-\d{2}$/', $period)) {
                     $q->whereYear('schedule_date', substr($period, 0, 4))
@@ -255,31 +359,36 @@ class EvaluationCalculatorService
             'late' => $late,
             'absent' => $absent,
             'excused' => $excused,
-            'attendance_rate' => $total > 0 ? ($present / $total) * 100 : 100.0,
+            'attendance_rate' => $total > 0 ? ($present / $total) * 100 : 0.0,
         ];
     }
 
     /**
      * Get Customer Satisfaction details for display
      */
-    protected function getSatisfactionDetails(Employee $employee, ?string $period = null): array
+    protected function getSatisfactionDetails(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null): array
     {
         $query = CustomerSatisfactionScore::where('employee_id', $employee->id);
 
-        if ($period) {
-            $query->where('period', $period);
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate.' 00:00:00', $endDate.' 23:59:59']);
+        } elseif ($period) {
+            $periods = $this->mapPeriodToSatisfactionPeriods($period);
+            if (! empty($periods)) {
+                $query->whereIn('period', $periods);
+            }
         }
 
         $scores = $query->latest()->get();
 
-        $average = $scores->isNotEmpty() ? $scores->avg('score') : 10.0;
+        $average = $scores->isNotEmpty() ? $scores->avg('score') : null;
 
         return [
             'has_scores' => $scores->isNotEmpty(),
             'score_count' => $scores->count(),
             'average_score' => $average,
-            'highest_score' => $scores->isNotEmpty() ? $scores->max('score') : 10.0,
-            'lowest_score' => $scores->isNotEmpty() ? $scores->min('score') : 10.0,
+            'highest_score' => $scores->isNotEmpty() ? $scores->max('score') : null,
+            'lowest_score' => $scores->isNotEmpty() ? $scores->min('score') : null,
             'recent_scores' => $scores->take(5),
         ];
     }
@@ -287,20 +396,19 @@ class EvaluationCalculatorService
     /**
      * Get KPI targets for an employee filtered by period
      */
-    protected function getKpiTargets(Employee $employee, ?string $period = null)
+    protected function getKpiTargets(Employee $employee, ?string $period = null, ?string $startDate = null, ?string $endDate = null)
     {
         $query = KpiTarget::where('employee_id', $employee->id);
 
-        // Filter by period if provided (note: period is enum: daily, weekly, monthly, custom)
-        if ($period) {
-            // Map evaluation period to KPI target period type
-            // For example: "Januari 2026" -> "monthly"
-            if (preg_match('/(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)/i', $period)) {
-                $query->where('period', 'monthly');
-            } elseif (preg_match('/Q[1-4]/i', $period)) {
-                $query->where('period', 'monthly'); // Quarterly targets use monthly
-            }
+        // Filter by date range if provided
+        if ($startDate && $endDate) {
+            $query->whereBetween('start_date', [$startDate, $endDate])
+                ->orWhereBetween('end_date', [$startDate, $endDate]);
         }
+
+        // Don't filter by period for KPI targets - take ALL active targets
+        // KPI targets with period="daily" should be counted regardless of evaluation period
+        // Example: Daily sales target applies to any evaluation period
 
         return $query->active()->get();
     }
