@@ -8,7 +8,7 @@
     <div class="text-center mb-8">
         <h1 class="text-4xl font-bold text-orange-600">GaBoard</h1>
         <p class="text-gray-500 mt-2">Sistem Penilaian Kinerja Karyawan</p>
-        <p class="text-sm text-gray-400 mt-1">Mie Gacoan</p>
+        <p class="text-sm text-gray-400 mt-1">Sistem Penilaian Kinerja</p>
     </div>
 
     <!-- Login Form -->

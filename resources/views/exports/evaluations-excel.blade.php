@@ -69,7 +69,7 @@
 <body>
     <div class="header">
         <h1>{{ $title }}</h1>
-        <p>Sistem Penilaian Kinerja Karyawan - Mie Gacoan</p>
+        <p>Sistem Penilaian Kinerja Karyawan - Perusahaan</p>
         <p>Tanggal Export: {{ date('d F Y H:i') }}</p>
     </div>
 
@@ -137,7 +137,7 @@
 
     <div style="margin-top: 30px; text-align: center; color: #666; font-size: 10px;">
         <p>Dokumen ini dihasilkan secara otomatis oleh sistem GaBoard</p>
-        <p>© 2026 Mie Gacoan - Sistem Penilaian Kinerja Karyawan</p>
+        <p>© 2026 Perusahaan - Sistem Penilaian Kinerja Karyawan</p>
     </div>
 </body>
 </html>

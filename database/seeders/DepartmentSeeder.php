@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Department;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DepartmentSeeder extends Seeder
@@ -18,37 +17,37 @@ class DepartmentSeeder extends Seeder
                 'name' => 'Kantor Pusat',
                 'code' => 'HQ',
                 'location' => 'Jakarta Selatan',
-                'description' => 'Kantor Pusat Mie Gacoan - HR & Management Office',
+                'description' => 'Kantor Pusat Perusahaan - HR & Management Office',
             ],
             [
                 'name' => 'Gerai Jakarta Pusat',
                 'code' => 'JKT-01',
                 'location' => 'Jakarta Pusat',
-                'description' => 'Gerai Mie Gacoan Jakarta Pusat',
+                'description' => 'Gerai Perusahaan Jakarta Pusat',
             ],
             [
                 'name' => 'Gerai Jakarta Selatan',
                 'code' => 'JKT-02',
                 'location' => 'Jakarta Selatan',
-                'description' => 'Gerai Mie Gacoan Jakarta Selatan',
+                'description' => 'Gerai Perusahaan Jakarta Selatan',
             ],
             [
                 'name' => 'Gerai Jakarta Barat',
                 'code' => 'JKT-03',
                 'location' => 'Jakarta Barat',
-                'description' => 'Gerai Mie Gacoan Jakarta Barat',
+                'description' => 'Gerai Perusahaan Jakarta Barat',
             ],
             [
                 'name' => 'Gerai Surabaya',
                 'code' => 'SBY-01',
                 'location' => 'Surabaya Pusat',
-                'description' => 'Gerai Mie Gacoan Surabaya',
+                'description' => 'Gerai Perusahaan Surabaya',
             ],
             [
                 'name' => 'Gerai Bandung',
                 'code' => 'BDG-01',
                 'location' => 'Bandung Pusat',
-                'description' => 'Gerai Mie Gacoan Bandung',
+                'description' => 'Gerai Perusahaan Bandung',
             ],
         ];
 

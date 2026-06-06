@@ -7,9 +7,9 @@ class FuzzyLogicService
     /**
      * Calculate performance evaluation using Fuzzy Logic Sugeno method.
      *
-     * @param float $kpiScore KPI Pencapaian (0-100)
-     * @param float $attendanceRate Tingkat Kehadiran (0-100)
-     * @param float $customerSatisfaction Kepuasan Pelanggan (1-10)
+     * @param  float  $kpiScore  KPI Pencapaian (0-100)
+     * @param  float  $attendanceRate  Tingkat Kehadiran (0-100)
+     * @param  float  $customerSatisfaction  Kepuasan Pelanggan (1-10)
      * @return array Array containing fuzzy_score, category, and recommendation
      */
     public function calculatePerformance(float $kpiScore, float $attendanceRate, float $customerSatisfaction): array
@@ -35,12 +35,12 @@ class FuzzyLogicService
         $recommendation = $this->getHRRecommendation($category);
 
         // Get active rules (rules that fired)
-        $activeRules = array_filter($ruleResults, function($rule) {
+        $activeRules = array_filter($ruleResults, function ($rule) {
             return $rule['strength'] > 0;
         });
 
         // Sort active rules by strength
-        uasort($activeRules, function($a, $b) {
+        uasort($activeRules, function ($a, $b) {
             return $b['strength'] <=> $a['strength'];
         });
 
@@ -52,29 +52,29 @@ class FuzzyLogicService
                 'kpi' => [
                     'input' => $kpiScore,
                     'membership' => $kpiMembership,
-                    'dominant' => $this->getDominantMembership($kpiMembership)
+                    'dominant' => $this->getDominantMembership($kpiMembership),
                 ],
                 'attendance' => [
                     'input' => $attendanceRate,
                     'membership' => $attendanceMembership,
-                    'dominant' => $this->getDominantMembership($attendanceMembership)
+                    'dominant' => $this->getDominantMembership($attendanceMembership),
                 ],
                 'satisfaction' => [
                     'input' => $customerSatisfaction,
                     'membership' => $satisfactionMembership,
-                    'dominant' => $this->getDominantMembership($satisfactionMembership)
-                ]
+                    'dominant' => $this->getDominantMembership($satisfactionMembership),
+                ],
             ],
             'active_rules' => array_values($activeRules),
             'defuzzification_process' => [
-                'numerator' => array_sum(array_map(function($rule) {
+                'numerator' => array_sum(array_map(function ($rule) {
                     return $rule['strength'] * $rule['z'];
                 }, $ruleResults)),
                 'denominator' => array_sum(array_column($ruleResults, 'strength')),
-                'rules_used' => count(array_filter($ruleResults, function($rule) {
+                'rules_used' => count(array_filter($ruleResults, function ($rule) {
                     return $rule['strength'] > 0;
-                }))
-            ]
+                })),
+            ],
         ];
     }
 
@@ -85,9 +85,10 @@ class FuzzyLogicService
     {
         arsort($membership);
         $dominantKey = array_key_first($membership);
+
         return [
             'category' => $dominantKey,
-            'value' => $membership[$dominantKey]
+            'value' => $membership[$dominantKey],
         ];
     }
 
@@ -310,8 +311,8 @@ class FuzzyLogicService
      */
     protected function getHRRecommendation(string $category): string
     {
-        return match($category) {
-            'sangat_baik' => 'Rekomendasikan bonus kinerja dan fast-track karir. Masukkan ke talent pool unggulan Gacoan. Pertimbangkan promosi ke posisi yang lebih tanggung jawab.',
+        return match ($category) {
+            'sangat_baik' => 'Rekomendasikan bonus kinerja dan fast-track karir. Masukkan ke talent pool unggulan perusahaan. Pertimbangkan promosi ke posisi yang lebih tanggung jawab.',
             'baik' => 'Berikan apresiasi formal. Identifikasi peluang promosi atau penambahan tanggung jawab. Pertahankan performa saat ini dan kembangkan potensi kepemimpinan.',
             'cukup' => 'Daftarkan ke program pelatihan & mentoring. Tetapkan target pengembangan kuartal berikutnya. Evaluasi area yang memerlukan perbaikan dan buat action plan.',
             'buruk' => 'Laksanakan PIP (Performance Improvement Plan). Konseling wajib dengan atasan untuk identifikasi akar masalah. Evaluasi ulang dalam 30 hari dengan target peningkatan yang jelas.',

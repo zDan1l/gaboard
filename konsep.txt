@@ -2,12 +2,12 @@
 KONSEP SISTEM
 Penilaian Kinerja Karyawan
 Berbasis Fuzzy Logic — Metode Sugeno
-Studi Kasus: Mie Gacoan
+Studi Kasus: Perusahaan Restoran
 Pendekatan Objektif untuk Evaluasi SDM berbasis Data
 
  
 1. Latar Belakang
-Mie Gacoan sebagai jaringan restoran dengan ratusan gerai dan ribuan karyawan membutuhkan sistem penilaian kinerja yang konsisten, transparan, dan mudah dijelaskan ke seluruh level manajemen.
+Perusahaan sebagai jaringan restoran dengan ratusan gerai dan ribuan karyawan membutuhkan sistem penilaian kinerja yang konsisten, transparan, dan mudah dijelaskan ke seluruh level manajemen.
 Pendekatan konvensional (penilaian manual atau rata-rata sederhana) berisiko subjektif dan tidak mampu menangkap kombinasi kondisi yang kompleks. Misalnya: karyawan dengan penjualan tinggi tapi kehadiran rendah — nilainya tidak bisa sekadar dirata-rata.
 Fuzzy Logic metode Sugeno dipilih karena:
 •	Menghasilkan output numerik langsung (crisp value) tanpa defuzzifikasi rumit.
@@ -16,7 +16,7 @@ Fuzzy Logic metode Sugeno dipilih karena:
 •	Bisa diintegrasikan ke sistem HRIS atau payroll yang sudah berjalan.
 
 2. Tujuan Sistem
-Tujuan	Manfaat untuk Gacoan
+Tujuan	Manfaat untuk Perusahaan
 Penilaian objektif & konsisten	Menghilangkan bias personal dari atasan
 Otomasi evaluasi periodik	Hemat waktu tim HR setiap kuartal
 Rekomendasi tindakan otomatis	HR langsung tahu: PIP, pelatihan, atau promosi
@@ -72,7 +72,7 @@ R10	Rendah	Tinggi	Sedang	0.38	Buruk
 R11	Rendah	Sedang	Rendah	0.20	Buruk
 R12	Rendah	Rendah	Rendah	0.08	Buruk
 
-Catatan: Nilai z setiap rule ditentukan bersama tim HR dan manajer operasional Gacoan berdasarkan pengalaman lapangan. Rule dapat diubah tanpa memodifikasi kode sistem.
+Catatan: Nilai z setiap rule ditentukan bersama tim HR dan manajer operasional Perusahaan berdasarkan pengalaman lapangan. Rule dapat diubah tanpa memodifikasi kode sistem.
 
 6. Inferensi & Defuzzifikasi
 6.1 Inferensi (Operator MIN)
@@ -102,7 +102,7 @@ Rentang Skor	Kategori	Rekomendasi Tindakan HR
 0.00 – 0.39	Kinerja Buruk	Laksanakan PIP (Performance Improvement Plan). Konseling wajib dengan atasan. Evaluasi ulang 30 hari.
 0.40 – 0.64	Kinerja Cukup	Daftarkan ke program pelatihan & mentoring. Tetapkan target pengembangan kuartal berikutnya.
 0.65 – 0.84	Kinerja Baik	Berikan apresiasi formal. Identifikasi peluang promosi atau penambahan tanggung jawab.
-0.85 – 1.00	Kinerja Sangat Baik	Rekomendasikan bonus kinerja dan fast-track karir. Masukkan ke talent pool unggulan Gacoan.
+0.85 – 1.00	Kinerja Sangat Baik	Rekomendasikan bonus kinerja dan fast-track karir. Masukkan ke talent pool unggulan Perusahaan.
 
 8. Alur Sistem Secara Ringkas
 Tahap	Aktivitas	Pelaku
@@ -114,7 +114,7 @@ Tahap	Aktivitas	Pelaku
 6. Tindak lanjut	HR menjalankan rekomendasi: PIP, pelatihan, apresiasi, promosi	HR / Manajemen
 
 9. Rencana Implementasi
-Sistem dirancang sebagai aplikasi web internal Gacoan yang dapat diakses oleh HR pusat dan manajer gerai:
+Sistem dirancang sebagai aplikasi web internal Perusahaan yang dapat diakses oleh HR pusat dan manajer gerai:
 
 Komponen	Deskripsi	Prioritas
 Form Input	Pengisian 3 nilai per karyawan, bisa bulk import dari CSV/Excel	Tinggi
@@ -127,7 +127,7 @@ Integrasi HRIS	Sinkronisasi data dengan sistem payroll/absensi yang ada	Rendah
 Teknologi yang disarankan: React (frontend), Python Flask atau Node.js (backend engine fuzzy), PostgreSQL (penyimpanan data kinerja dan rule). Dapat berjalan di infrastruktur cloud maupun on-premise.
 
 10. Kesimpulan
-Sistem penilaian kinerja berbasis Fuzzy Logic Sugeno menawarkan pendekatan yang lebih adil dan terukur dibandingkan penilaian manual. Untuk konteks Gacoan, sistem ini memungkinkan evaluasi ribuan karyawan secara konsisten di seluruh gerai, dengan hasil yang bisa dijelaskan secara logis ke karyawan maupun manajemen.
-Tiga keunggulan utama untuk Gacoan: (1) Penilaian multi-dimensi yang tidak mereduksi kinerja menjadi satu angka mentah, (2) Rule base yang bisa dikustomisasi sesuai nilai dan prioritas perusahaan tanpa perlu developer, dan (3) Rekomendasi tindakan HR yang otomatis menghemat waktu dan memastikan konsistensi kebijakan SDM di seluruh gerai.
+Sistem penilaian kinerja berbasis Fuzzy Logic Sugeno menawarkan pendekatan yang lebih adil dan terukur dibandingkan penilaian manual. Untuk konteks Perusahaan, sistem ini memungkinkan evaluasi ribuan karyawan secara konsisten di seluruh gerai, dengan hasil yang bisa dijelaskan secara logis ke karyawan maupun manajemen.
+Tiga keunggulan utama untuk Perusahaan: (1) Penilaian multi-dimensi yang tidak mereduksi kinerja menjadi satu angka mentah, (2) Rule base yang bisa dikustomisasi sesuai nilai dan prioritas perusahaan tanpa perlu developer, dan (3) Rekomendasi tindakan HR yang otomatis menghemat waktu dan memastikan konsistensi kebijakan SDM di seluruh gerai.
 
-Dokumen Konsep — Sistem Penilaian Kinerja Fuzzy Sugeno — Mie Gacoan — 2026
+Dokumen Konsep — Sistem Penilaian Kinerja Fuzzy Sugeno — 2026

@@ -155,7 +155,7 @@
     <div class="p-4 border-t border-gray-800">
         <div class="text-xs text-gray-400">
             <p>&copy; 2026 GaBoard</p>
-            <p>Mie Gacoan</p>
+            <p>Sistem Penilaian Kinerja</p>
         </div>
     </div>
 </aside>

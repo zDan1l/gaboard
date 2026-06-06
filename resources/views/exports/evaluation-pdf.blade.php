@@ -143,7 +143,7 @@
         <div class="header">
             <h1>Hasil Penilaian Kinerja Karyawan</h1>
             <p>Sistem Penilaian Berbasis Fuzzy Logic</p>
-            <p>Mie Gacoan - GaBoard</p>
+            <p>Perusahaan - GaBoard</p>
         </div>
 
         <div class="section">
@@ -237,7 +237,7 @@
         <div class="footer">
             <p>Dokumen ini dihasilkan secara otomatis oleh sistem GaBoard</p>
             <p>Tanggal cetak: {{ date('d F Y H:i') }}</p>
-            <p>© 2026 Mie Gacoan - Sistem Penilaian Kinerja Karyawan</p>
+            <p>© 2026 Perusahaan - Sistem Penilaian Kinerja Karyawan</p>
         </div>
     </div>
 </body>
