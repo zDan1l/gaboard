@@ -83,6 +83,34 @@ GaBoard menggunakan **fungsi keanggotaan trapesium (trapezoidal membership funct
 
 Pendekatan trapesium dipilih karena kemampuannya merepresentasikan area transisi yang realistis, di mana suatu nilai dapat memiliki derajat keanggotaan parsial di dua himpunan sekaligus.
 
+### 3.3.1 Analogi Mudah Memahami 4 Parameter
+
+Bayangkan **Fungsi Keanggotaan Trapezium** seperti **slider volume** di HP — bukan cuma "NYALA" atau "MATI" (0 atau 1), tapi bisa di posisi **antaranya** (0.1, 0.5, 0.9, dll).
+
+```
+       ══════════════               ← Zona "PENUH" (μ = 1)
+      ╱             ╲
+     ╱               ╲
+    ╱                 ╲              ← Zona "TRANSISI" (μ naik/turun)
+   ╱                   ╲
+  ╱                     ╲
+═╪─────────────────────────╪────→  Nilai Input
+ a        b        c        d
+```
+
+**Arti 4 Parameter dalam Bahasa Sederhana:**
+
+| Parameter | Ingat Saja | Analogi |
+|-----------|-----------|---------|
+| **a** | Start bawah — sebelum ini: pasti **0** | "Belum masuk zona sama sekali" |
+| **b** | Start naik — ke sini: menuju **1** | "Mulai naik dari 0 ke 1" |
+| **c** | Start turun — sampai sini: masih **1** | "Zona nyaman! Penuh 100%" |
+| **d** | End atas — setelah ini: pasti **0** lagi | "Udah keluar zona" |
+
+**Kenapa Trapesium, Bukan Segitiga?**
+
+Trapesium punya **"zona nyaman"** (rentang b→c) di mana μ=1. Ini realistis untuk penilaian kinerja — tidak semua harus ekstrem. Ada rentang nilai yang masih masuk kategori "Tinggi" tanpa harus sempurna.
+
 ### 3.4 Fuzzy Logic dalam Penilaian Kinerja
 
 Penelitian-penelitian berikut membuktikan efektivitas Fuzzy Logic untuk evaluasi kinerja:
@@ -239,26 +267,20 @@ Transformasi digital dalam HR menuntut sistem yang:
 
 Menurut [Bersin (2020)](#referensi), 92% perusahaan Fortune 500 telah beralih ke digital performance management.
 
-### 6.2 Teknologi Implementasi GaBoard
+### 6.2 Arsitektur Sistem
 
-| Komponen | Teknologi | Keterangan |
-|----------|-----------|-------------|
-| Backend | PHP 8.3 + Laravel 13 | Framework PHP modern dengan arsitektur MVC |
-| Frontend | Blade + Tailwind CSS | Template engine Laravel dengan utility CSS |
-| Database | MySQL | Penyimpanan data kinerja dan rule |
-| Fuzzy Engine | PHP Native | Implementasi murni Fuzzy Logic Sugeno tanpa library eksternal |
+GaBoard mengadopsi arsitektur **MVC (Model-View-Controller)** dengan komponen:
 
-### 6.3 Struktur Database
+| Komponen | Fungsi |
+|----------|--------|
+| **Backend** | Business logic Fuzzy Logic Sugeno, manajemen data |
+| **Frontend** | Antarmuka pengguna interaktif |
+| **Database** | Penyimpanan data kinerja, rule, dan riwayat evaluasi |
+| **Fuzzy Engine** | Modul perhitungan fuzzifikasi, inferensi, dan defuzzifikasi |
 
-Sistem menggunakan tabel utama untuk menyimpan data penilaian:
+> **Catatan:** Detail implementasi teknis (spesifikasi framework, database schema, dan source code) dibahas secara lengkap pada Bab Implementasi.
 
-1. **kpi_targets** - Target KPI per karyawan per periode
-2. **kpi_reports** - Realisasi pencapaian KPI (actual_value vs target_value)
-3. **attendance_entries** - Data kehadiran karyawan (clock_in, clock_out, status)
-4. **customer_satisfaction_scores** - Skor kepuasan pelanggan (1-10)
-5. **evaluations** - Hasil perhitungan Fuzzy Logic lengkap dengan detail fuzzifikasi
-
-### 6.4 Keunggulan Aplikasi Web
+### 6.3 Keunggulan Aplikasi Web
 
 Studi [SHRM (2019)](#referensi) menunjukkan keunggulan web-based appraisal:
 
@@ -267,23 +289,11 @@ Studi [SHRM (2019)](#referensi) menunjukkan keunggulan web-based appraisal:
 3. **Mobile-friendly**: Manajer dapat menilai kapan saja, di mana saja
 4. **Data Analytics**: Tren kinerja dapat di-track otomatis
 
-### 6.5 Fitur Utama GaBoard
+### 6.4 Fitur Utama GaBoard
 
-1. **Dashboard HR/Manager**
-   - Statistik karyawan aktif
-   - Monitoring evaluasi yang sudah dibuat
-   - Indikator karyawan yang belum/belum dinilai
-
-2. **Manajemen Penilaian**
-   - **Buat Penilaian Baru** - Form input manual 3 variabel
-   - **Auto-Calculate** - Tombol otomatis menghitung dari data real
-   - **Generate Semua** - Batch generate untuk semua karyawan sekaligus
-   - **Edit/View** - Lihat detail fuzzifikasi dan rekomendasi
-
-3. **Input Data Pendukung**
-   - Target KPI → Laporan KPI (KPI Reports)
-   - Jadwal Absensi → Data Kehadiran (Attendance Entries)
-   - Survei Kepuasan (Customer Satisfaction Scores)
+1. **Dashboard HR/Manager** - Monitoring statistik dan status evaluasi
+2. **Manajemen Penilaian** - Input manual, auto-calculate, dan batch generate
+3. **Data Pendukung** - Integrasi KPI, kehadiran, dan survei kepuasan pelanggan
 
 ## 7. Kategori Output dan Rekomendasi
 

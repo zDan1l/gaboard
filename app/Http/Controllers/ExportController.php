@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Evaluation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use PDF;
 
 class ExportController extends Controller
 {
@@ -14,21 +15,37 @@ class ExportController extends Controller
     }
 
     /**
-     * Export single evaluation to PDF (simplified version)
+     * Export single evaluation to PDF (manager only - fuzzy details)
      */
     public function exportEvaluationPdf(Evaluation $evaluation)
     {
-        $this->authorizeExport($evaluation);
+        // Only HR Manager can export PDF with fuzzy details
+        if (Auth::user()->role->slug !== 'hr_manager') {
+            abort(403, 'Unauthorized access. PDF export is only available for managers.');
+        }
 
         $evaluation->load(['employee.user', 'employee.department', 'evaluator']);
 
-        $filename = 'penilaian_' . str_replace(' ', '_', $evaluation->employee->user->name) . '_' . $evaluation->evaluation_period . '.pdf';
+        // Sanitize filename - remove invalid characters
+        $employeeName = str_replace([' ', '/', '\\'], '_', $evaluation->employee->user->name);
+        $period = str_replace([' ', '/', '\\', 's/d'], '_', $evaluation->evaluation_period);
+        $filename = 'fuzzifikasi_'.$employeeName.'_'.$period.'.pdf';
 
-        // For now, return a view that can be printed
-        return view('exports.evaluation-pdf', [
+        // Generate PDF using dompdf
+        $pdf = PDF::loadView('exports.evaluation-fuzzy-pdf', [
             'evaluation' => $evaluation,
-            'title' => 'Penilaian Kinerja Karyawan',
         ]);
+
+        // Set paper size to A4
+        $pdf->setPaper('a4');
+
+        // Options for better PDF rendering
+        $options = $pdf->getOptions();
+        $options->setDefaultFont('Times New Roman');
+        $options->setIsHtml5ParserEnabled(true);
+        $options->setIsRemoteEnabled(false);
+
+        return $pdf->download($filename);
     }
 
     /**
