@@ -84,6 +84,7 @@
     <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p class="text-sm font-medium text-blue-800 mb-2">Demo Credentials:</p>
         <p class="text-xs text-blue-700">Email: manager.jkt@company.com</p>
+        <p class="text-xs text-blue-700">Email: aulia.putri@company.com</p>
         <p class="text-xs text-blue-700">Password: password</p>
     </div>
     @endif
