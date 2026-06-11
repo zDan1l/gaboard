@@ -52,7 +52,7 @@
     <div class="bg-white shadow-sm rounded-lg p-6">
         <div class="mb-6">
             <h3 class="text-lg font-semibold text-gray-900">Edit Form Penilaian</h3>
-            <p class="text-sm text-gray-600">Update nilai penilaian untuk menghitung ulang skor fuzzy</p>
+            <p class="text-sm text-gray-600">Update nilai penilaian untuk menghitung ulang skor kinerja</p>
         </div>
 
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
@@ -62,7 +62,7 @@
                 </svg>
                 <div>
                     <h4 class="text-sm font-semibold text-yellow-800">Perhatian</h4>
-                    <p class="text-sm text-yellow-700 mt-1">Mengubah nilai penilaian akan menghitung ulang skor fuzzy secara otomatis.</p>
+                    <p class="text-sm text-yellow-700 mt-1">Mengubah nilai penilaian akan menghitung ulang skor kinerja secara otomatis.</p>
                 </div>
             </div>
         </div>
@@ -159,9 +159,9 @@
                 <h4 class="text-sm font-semibold text-blue-800 mb-2">Hasil Saat Ini</h4>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <p class="text-xs text-blue-600">Skor Fuzzy</p>
+                        <p class="text-xs text-blue-600">Skor Kinerja</p>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-{{ $evaluation->performance_class }}-100 text-{{ $evaluation->performance_class }}-800">
-                            {{ $evaluation->fuzzy_score }}
+                            {{ $evaluation->fuzzy_score ?? 'N/A' }}
                         </span>
                     </div>
                     <div>

@@ -69,7 +69,7 @@ class DepartmentController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->slug !== 'hr' && $user->role->slug !== 'executive') {
+        if ($user->role->slug !== 'hr_manager' && $user->role->slug !== 'executive') {
             abort(403, 'Unauthorized access.');
         }
 

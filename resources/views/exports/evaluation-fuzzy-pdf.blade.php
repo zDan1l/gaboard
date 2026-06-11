@@ -288,7 +288,7 @@
         <div class="header">
             <div class="badge">Confidential Document</div>
             <h1>Laporan Penilaian Kinerja</h1>
-            <h2>Sistem GaBoard &mdash; Fuzzy Logic Evaluation</h2>
+            <h2>Sistem GaBoard &mdash; Sistem Penilaian Kinerja</h2>
         </div>
 
         <!-- Section 1: Informasi Karyawan -->
@@ -366,7 +366,7 @@
             <div class="section-title">Hasil Penilaian</div>
 
             <div class="result-box">
-                <div class="result-label">Skor Kinerja Fuzzy</div>
+                <div class="result-label">Skor Kinerja</div>
                 <div class="result-score">{{ number_format($evaluation->fuzzy_score, 2) }}</div>
                 <div class="result-category">{{ $evaluation->category_label }}</div>
             </div>

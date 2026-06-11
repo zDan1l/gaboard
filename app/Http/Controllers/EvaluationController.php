@@ -165,7 +165,7 @@ class EvaluationController extends Controller
             ]);
 
             return redirect()->route('evaluations.show', $evaluation)
-                ->with('success', 'Penilaian berhasil disimpan. Skor Fuzzy: '.$result['fuzzy_score'].' ('.$result['category'].')');
+                ->with('success', 'Penilaian berhasil disimpan. Skor Kinerja: '.$result['fuzzy_score'].' ('.$result['category'].')');
 
         } catch (\Exception $e) {
             return redirect()->back()
@@ -235,7 +235,7 @@ class EvaluationController extends Controller
         ]);
 
         return redirect()->route('evaluations.show', $evaluation)
-            ->with('success', 'Penilaian berhasil diperbarui. Skor Fuzzy: '.$result['fuzzy_score']);
+            ->with('success', 'Penilaian berhasil diperbarui. Skor Kinerja: '.$result['fuzzy_score']);
     }
 
     /**
@@ -356,7 +356,7 @@ class EvaluationController extends Controller
                         $query->where(function ($q) use ($startDate, $endDate) {
                             // Existing period overlaps with new period
                             $q->where('start_date', '<=', $endDate)
-                              ->where('end_date', '>=', $startDate);
+                                ->where('end_date', '>=', $startDate);
                         });
                     })
                     ->first();
@@ -369,6 +369,7 @@ class EvaluationController extends Controller
                         'name' => $employee->user->name,
                         'reason' => "Overlap dengan penilaian: {$overlapStart} s/d {$overlapEnd}",
                     ];
+
                     continue;
                 }
 
@@ -460,13 +461,15 @@ class EvaluationController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role->slug !== 'hr_manager') {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit penilaian.');
+        if ($user->role->slug === 'hr_manager') {
+            return; // HR Manager can edit all evaluations
         }
 
         if ($user->role->slug === 'manager' &&
-            $evaluation->employee->manager_id !== $user->employee->id) {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit penilaian ini.');
+            $evaluation->employee->manager_id === $user->employee->id) {
+            return; // Manager can edit evaluations of their subordinates
         }
+
+        abort(403, 'Anda tidak memiliki akses untuk mengedit penilaian.');
     }
 }

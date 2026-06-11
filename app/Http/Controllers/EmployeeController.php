@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,46 +37,79 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Show the form for creating a new employee
+     * Show the form for creating a new employee with user data (single form)
      */
     public function create()
     {
-        $user = Auth::user();
-
         $departments = Department::all();
         // Get HR Managers (users with hr_manager role) as potential managers
         $managers = User::whereHas('role', function ($query) {
             $query->where('slug', 'hr_manager');
         })->get();
 
-        // Get users with 'employee' role who don't have Employee records yet
-        $users = User::whereHas('role', function ($query) {
-            $query->where('slug', 'employee');
-        })->doesntHave('employee')->get();
-
-        return view('employees.create', compact('departments', 'managers', 'users'));
+        return view('employees.create', compact('departments', 'managers'));
     }
 
     /**
-     * Store a newly created employee
+     * Store a newly created employee with user data in single transaction
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id|unique:employees,user_id',
+            // User data
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+
+            // Employee data
+            'employee_code' => 'required|string|max:255|unique:employees,employee_code',
             'department_id' => 'required|exists:departments,id',
             'manager_id' => 'nullable|exists:users,id',
-            'employee_code' => 'required|string|max:255|unique:employees,employee_code',
             'position' => 'required|string|max:255',
             'phone' => 'nullable|string|max:255',
             'join_date' => 'required|date',
             'status' => 'required|in:active,inactive,terminated',
         ]);
 
-        Employee::create($validated);
+        try {
+            \DB::beginTransaction();
 
-        return redirect()->route('employees.index')
-            ->with('success', 'Karyawan berhasil ditambahkan.');
+            // Create User with employee role
+            $employeeRole = Role::where('slug', 'employee')->first();
+            if (! $employeeRole) {
+                throw new \Exception('Role Employee tidak ditemukan. Hubungi administrator.');
+            }
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => \Hash::make($validated['password']),
+                'role_id' => $employeeRole->id,
+            ]);
+
+            // Create Employee
+            Employee::create([
+                'user_id' => $user->id,
+                'employee_code' => $validated['employee_code'],
+                'department_id' => $validated['department_id'],
+                'manager_id' => $validated['manager_id'] ?? null,
+                'position' => $validated['position'],
+                'phone' => $validated['phone'] ?? null,
+                'join_date' => $validated['join_date'],
+                'status' => $validated['status'],
+            ]);
+
+            \DB::commit();
+
+            return redirect()->route('employees.index')
+                ->with('success', 'Karyawan baru berhasil ditambahkan beserta akun usernya.');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menambahkan karyawan: '.$e->getMessage());
+        }
     }
 
     /**

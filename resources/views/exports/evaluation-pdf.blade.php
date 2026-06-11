@@ -142,7 +142,7 @@
     <div class="container">
         <div class="header">
             <h1>Hasil Penilaian Kinerja Karyawan</h1>
-            <p>Sistem Penilaian Berbasis Fuzzy Logic</p>
+            <p>Sistem Penilaian Kinerja GaBoard</p>
             <p>Perusahaan - GaBoard</p>
         </div>
 
@@ -177,10 +177,10 @@
         </div>
 
         <div class="section">
-            <h2>Hasil Perhitungan Fuzzy Logic</h2>
+            <h2>Hasil Perhitungan Skor Kinerja</h2>
             <div class="score-box">
                 <div>Skor Kinerja</div>
-                <div class="score">{{ $evaluation->fuzzy_score }}</div>
+                <div class="score">{{ $evaluation->fuzzy_score ?? 'N/A' }}</div>
                 <div class="category">{{ $evaluation->category_label }}</div>
             </div>
         </div>

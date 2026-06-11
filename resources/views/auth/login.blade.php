@@ -6,9 +6,8 @@
 <div class="bg-white rounded-2xl shadow-xl p-8">
     <!-- Logo -->
     <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-orange-600">GaBoard</h1>
+        <img src="{{ asset('gaboard-logo.png') }}" alt="GaBoard Logo" class="h-16 mx-auto mb-4">
         <p class="text-gray-500 mt-2">Sistem Penilaian Kinerja Karyawan</p>
-        <p class="text-sm text-gray-400 mt-1">Sistem Penilaian Kinerja</p>
     </div>
 
     <!-- Login Form -->
@@ -84,7 +83,7 @@
     @if(config('app.env') !== 'production')
     <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p class="text-sm font-medium text-blue-800 mb-2">Demo Credentials:</p>
-        <p class="text-xs text-blue-700">Email: hr@gaboard.com</p>
+        <p class="text-xs text-blue-700">Email: manager.jkt@company.com</p>
         <p class="text-xs text-blue-700">Password: password</p>
     </div>
     @endif

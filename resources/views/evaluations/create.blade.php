@@ -9,7 +9,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Buat Penilaian Kinerja Baru</h1>
-                <p class="text-sm text-gray-600 mt-1">Input kriteria penilaian karyawan dengan Fuzzy Logic</p>
+                <p class="text-sm text-gray-600 mt-1">Input kriteria penilaian karyawan dengan sistem penilaian kinerja</p>
             </div>
             <a href="{{ route('evaluations.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +24,7 @@
     <div class="bg-white shadow-sm rounded-lg p-6">
         <div class="mb-6">
             <h3 class="text-lg font-semibold text-gray-900">Form Input Penilaian</h3>
-            <p class="text-sm text-gray-600">Sistem akan menghitung skor kinerja secara otomatis dari data real karyawan menggunakan Fuzzy Logic</p>
+            <p class="text-sm text-gray-600">Sistem akan menghitung skor kinerja secara otomatis dari data real karyawan</p>
         </div>
 
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -126,7 +126,7 @@
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Simpan & Hitung Skor Fuzzy
+                    Simpan & Hitung Skor Kinerja
                 </button>
             </div>
         </form>
@@ -134,7 +134,7 @@
 
     <!-- Guide -->
     <div class="bg-white shadow-sm rounded-lg p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Panduan Skor Fuzzy Logic</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Panduan Skor Kinerja</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Performance Categories -->

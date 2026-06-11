@@ -13,7 +13,8 @@
       "mcp__laravel-boost__last-error",
       "Bash(timeout 3 bash -c \"while ! curl -s http://localhost:8001 > /dev/null; do sleep 0.5; done\")",
       "mcp__laravel-boost__browser-logs",
-      "Bash(composer show *)"
+      "Bash(composer show *)",
+      "Bash(php D:\\\\kuliah\\\\semester-4\\\\AI praktikum\\\\UAS\\\\gaboard\\\\artisan *)"
     ]
   },
   "disabledMcpjsonServers": [

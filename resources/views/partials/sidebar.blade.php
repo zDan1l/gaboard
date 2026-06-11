@@ -1,11 +1,14 @@
 <aside class="w-64 bg-gray-900 text-white flex flex-col fixed h-full">
-    <!-- Logo Area -->
-    <div class="p-6 border-b border-gray-800">
-        <h2 class="text-xl font-bold text-orange-500">Menu</h2>
+    <!-- Logo Area (Fixed di atas) -->
+    <div class="p-6 border-b border-gray-800 flex flex-col justify-center shrink-0">
+        <div class="flex flex-col justify-center items-center">
+            <img src="{{ asset('gaboard-logo.png') }}" alt="GaBoard Logo" width="100">
+        </div>
+        <p class="text-xs text-gray-400 text-center">Sistem Penilaian Kinerja</p>
     </div>
 
-    <!-- Navigation -->
-    <nav class="flex-1 p-4 space-y-2">
+    <!-- Navigation (Scrollable) -->
+    <nav class="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide">
         @if(auth()->user()->role->slug === 'hr_manager')
             <!-- HR/Manager Menu -->
             <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">HR Manager</div>
@@ -44,15 +47,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <span>Departemen</span>
-            </a>
-
-            <!-- Users -->
-            <a href="{{ route('users.index') }}"
-               class="flex items-center space-x-3 px-4 py-3 rounded-lg {{ request()->routeIs('users.*') ? 'bg-orange-600 text-white' : 'text-gray-300 hover:bg-gray-800' }} transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Users</span>
             </a>
 
             <!-- Reports -->
@@ -150,12 +144,4 @@
             </a>
         @endif
     </nav>
-
-    <!-- Bottom Info -->
-    <div class="p-4 border-t border-gray-800">
-        <div class="text-xs text-gray-400">
-            <p>&copy; 2026 GaBoard</p>
-            <p>Sistem Penilaian Kinerja</p>
-        </div>
-    </div>
 </aside>

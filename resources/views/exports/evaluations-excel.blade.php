@@ -107,7 +107,7 @@
                     <th>KPI (%)</th>
                     <th>Kehadiran (%)</th>
                     <th>Kepuasan (1-10)</th>
-                    <th>Skor Fuzzy</th>
+                    <th>Skor Kinerja</th>
                     <th>Kategori</th>
                     <th>Tanggal Penilaian</th>
                 </tr>

@@ -11,7 +11,6 @@ use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\KpiReportController;
 use App\Http\Controllers\KpiTargetController;
-use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
@@ -26,17 +25,6 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // User Management Routes
-    Route::resource('users', UserController::class)->names([
-        'index' => 'users.index',
-        'create' => 'users.create',
-        'store' => 'users.store',
-        'show' => 'users.show',
-        'edit' => 'users.edit',
-        'update' => 'users.update',
-        'destroy' => 'users.destroy',
-    ]);
 
     // Employee Management Routes
     Route::resource('employees', EmployeeController::class)->names([

@@ -225,7 +225,7 @@
                                 <p class="text-sm text-gray-500">{{ $evaluation->created_at->format('d F Y') }}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-lg font-bold text-{{ $evaluation->performance_class }}-600">{{ $evaluation->fuzzy_score }}</p>
+                                <p class="text-lg font-bold text-{{ $evaluation->performance_class }}-600">{{ $evaluation->fuzzy_score ?? 'N/A' }}</p>
                                 <span class="px-3 py-1 bg-{{ $evaluation->performance_class }}-100 text-{{ $evaluation->performance_class }}-700 text-xs font-medium rounded-full">
                                     {{ $evaluation->category_label }}
                                 </span>

@@ -3,8 +3,6 @@
         <!-- Logo -->
         <div class="flex items-center">
             <div class="flex-shrink-0">
-                <h1 class="text-2xl font-bold text-orange-600">GaBoard</h1>
-                <p class="text-xs text-gray-500">Sistem Penilaian Kinerja</p>
             </div>
         </div>
 

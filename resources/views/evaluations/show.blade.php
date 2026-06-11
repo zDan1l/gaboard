@@ -9,7 +9,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Detail Penilaian Kinerja</h1>
-                <p class="text-sm text-gray-600 mt-1">Hasil perhitungan Fuzzy Logic lengkap</p>
+                <p class="text-sm text-gray-600 mt-1">Hasil perhitungan skor kinerja lengkap</p>
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('evaluations.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
@@ -67,17 +67,17 @@
         </div>
     </div>
 
-    <!-- Fuzzy Logic Result -->
+    <!-- Skor Kinerja Result -->
     <div class="bg-white shadow-sm rounded-lg overflow-hidden">
         <div class="px-6 py-4 bg-{{ $evaluation->performance_class === 'success' ? 'green' : ($evaluation->performance_class === 'primary' ? 'blue' : ($evaluation->performance_class === 'warning' ? 'yellow' : 'red')) }}-600 text-white">
-            <h3 class="text-lg font-semibold">Hasil Perhitungan Fuzzy Logic</h3>
+            <h3 class="text-lg font-semibold">Hasil Perhitungan Skor Kinerja</h3>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
                 <div>
-                    <h4 class="text-gray-700 mb-2">Skor Fuzzy</h4>
+                    <h4 class="text-gray-700 mb-2">Skor Kinerja</h4>
                     <div class="text-6xl font-bold text-{{ $evaluation->performance_class === 'success' ? 'green' : ($evaluation->performance_class === 'primary' ? 'blue' : ($evaluation->performance_class === 'warning' ? 'yellow' : 'red')) }}-600">
-                        {{ $evaluation->fuzzy_score }}
+                        {{ $evaluation->fuzzy_score ?? 'N/A' }}
                     </div>
                 </div>
                 <div>

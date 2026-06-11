@@ -146,7 +146,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-semibold text-{{ $evaluation->performance_class }}-600">{{ $evaluation->fuzzy_score }}</p>
+                                <p class="text-sm font-semibold text-{{ $evaluation->performance_class }}-600">{{ $evaluation->fuzzy_score ?? 'N/A' }}</p>
                                 <p class="text-xs text-gray-500">{{ $evaluation->category_label }}</p>
                             </div>
                         </div>
@@ -188,7 +188,7 @@
                                     {{ $performer->employee->department->name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <span class="font-semibold">{{ $performer->fuzzy_score }}</span>
+                                    <span class="font-semibold">{{ $performer->fuzzy_score ?? 'N/A' }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $performer->performance_class }}-100 text-{{ $performer->performance_class }}-800">
